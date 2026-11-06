@@ -10,7 +10,9 @@ import { esc } from './ui.js';
 
 let seq = 0;
 
-export function anagraficInput({ name, field, label, value = null, upper = false, required = false, allowNew = true, placeholder = '', secondary, onSelect }) {
+// extra(text): voci aggiuntive mostrate prima di quelle dell'anagrafica ({ [field], _tag, _sub, ... }).
+// onPick(item): chiamata quando si sceglie una voce; se restituisce true la scelta è gestita da chi usa il campo.
+export function anagraficInput({ name, field, label, value = null, upper = false, required = false, allowNew = true, placeholder = '', secondary, onSelect, extra, onPick, optionalHint = true }) {
   const uid = `ai-${++seq}`;
   const original = value && value.id ? { id: value.id, text: value[field] || '' } : null;
   let selected = original ? { ...original } : null;
@@ -22,7 +24,7 @@ export function anagraficInput({ name, field, label, value = null, upper = false
   const el = document.createElement('label');
   el.className = 'field ai';
   el.innerHTML = `
-    <span>${esc(label)}${required ? '' : ' <em class="muted">(facoltativo)</em>'}</span>
+    <span>${esc(label)}${required || !optionalHint ? '' : ' <em class="muted">(facoltativo)</em>'}</span>
     <div class="ai-box">
       <input class="input" type="text" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false"
         aria-controls="${uid}" ${required ? 'required' : ''} placeholder="${esc(placeholder)}">
@@ -46,8 +48,11 @@ export function anagraficInput({ name, field, label, value = null, upper = false
   function close() { list.hidden = true; input.setAttribute('aria-expanded', 'false'); active = -1; }
   function render() {
     if (!items.length) { close(); return; }
-    list.innerHTML = items.map((it, i) => `<li role="option" id="${uid}-${i}" data-i="${i}" class="${i === active ? 'active' : ''}">
-      <span>${esc(it[field])}</span>${secondary && secondary(it) ? `<small>${esc(secondary(it))}</small>` : ''}</li>`).join('');
+    list.innerHTML = items.map((it, i) => {
+      const sub = it._tag ? it._sub : secondary && secondary(it);
+      return `<li role="option" id="${uid}-${i}" data-i="${i}" class="${i === active ? 'active' : ''}">
+      <span>${esc(it[field])}${it._tag ? ` <em class="ai-badge">${esc(it._tag)}</em>` : ''}</span>${sub ? `<small>${esc(sub)}</small>` : ''}</li>`;
+    }).join('');
     list.hidden = false;
     input.setAttribute('aria-expanded', 'true');
     if (active >= 0) input.setAttribute('aria-activedescendant', `${uid}-${active}`); else input.removeAttribute('aria-activedescendant');
@@ -62,6 +67,7 @@ export function anagraficInput({ name, field, label, value = null, upper = false
   }
 
   function pick(it) {
+    if (onPick && onPick(it) === true) { close(); return; }
     notify(it);
     selected = { id: it.id, text: it[field] || '' };
     input.value = selected.text;
@@ -82,6 +88,12 @@ export function anagraficInput({ name, field, label, value = null, upper = false
       active = -1;
       // corrispondenza esatta: la seleziono senza bisogno di cliccare
       const exact = text && items.find(it => String(it[field] || '').toLowerCase() === text.toLowerCase());
+      if (extra) {
+        // una voce extra (es. prenotazione) nasconde la stessa voce dell'anagrafica
+        const ex = extra(text);
+        const seen = new Set(ex.map(it => String(it[field] || '').toLowerCase()));
+        items = [...ex, ...items.filter(it => !seen.has(String(it[field] || '').toLowerCase()))].slice(0, 12);
+      }
       if (exact && (!selected || selected.id !== exact.id)) { selected = { id: exact.id, text: exact[field] }; notify(exact); }
       if (document.activeElement === input) render();
       else input.addEventListener('focus', render, { once: true });
@@ -142,5 +154,14 @@ export function anagraficInput({ name, field, label, value = null, upper = false
       return { id: null, [field]: upper ? text.toUpperCase() : text };
     },
     selectedId() { return selected && selected.text.toLowerCase() === input.value.trim().toLowerCase() ? selected.id : null; },
+    /** Imposta il valore da fuori (es. dati arrivati dal server): { id, [field] } oppure null. */
+    set(rec) {
+      const text = rec?.[field] || '';
+      selected = rec?.id ? { id: rec.id, text } : null;
+      notified = selected ? selected.id : null;
+      input.value = text;
+      input.setCustomValidity('');
+      updateTag();
+    },
   };
 }
