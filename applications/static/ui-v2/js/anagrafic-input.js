@@ -10,7 +10,7 @@ import { esc } from './ui.js';
 
 let seq = 0;
 
-export function anagraficInput({ name, field, label, value = null, upper = false, required = false, allowNew = true, placeholder = '', secondary }) {
+export function anagraficInput({ name, field, label, value = null, upper = false, required = false, allowNew = true, placeholder = '', secondary, onSelect }) {
   const uid = `ai-${++seq}`;
   const original = value && value.id ? { id: value.id, text: value[field] || '' } : null;
   let selected = original ? { ...original } : null;
@@ -52,7 +52,17 @@ export function anagraficInput({ name, field, label, value = null, upper = false
     input.setAttribute('aria-expanded', 'true');
     if (active >= 0) input.setAttribute('aria-activedescendant', `${uid}-${active}`); else input.removeAttribute('aria-activedescendant');
   }
+  // avvisa chi usa il campo quando cambia il record scelto (null = testo libero / vuoto)
+  let notified = original ? original.id : null;
+  function notify(item) {
+    const id = item ? item.id : null;
+    if (id === notified) return;
+    notified = id;
+    onSelect?.(item);
+  }
+
   function pick(it) {
+    notify(it);
     selected = { id: it.id, text: it[field] || '' };
     input.value = selected.text;
     close();
@@ -72,7 +82,7 @@ export function anagraficInput({ name, field, label, value = null, upper = false
       active = -1;
       // corrispondenza esatta: la seleziono senza bisogno di cliccare
       const exact = text && items.find(it => String(it[field] || '').toLowerCase() === text.toLowerCase());
-      if (exact && (!selected || selected.id !== exact.id)) selected = { id: exact.id, text: exact[field] };
+      if (exact && (!selected || selected.id !== exact.id)) { selected = { id: exact.id, text: exact[field] }; notify(exact); }
       if (document.activeElement === input) render();
       else input.addEventListener('focus', render, { once: true });
       updateTag();
@@ -81,7 +91,7 @@ export function anagraficInput({ name, field, label, value = null, upper = false
 
   input.addEventListener('input', () => {
     if (upper) { const p = input.selectionStart; input.value = input.value.toUpperCase(); input.setSelectionRange(p, p); }
-    if (selected && selected.text.toLowerCase() !== input.value.trim().toLowerCase()) selected = null;
+    if (selected && selected.text.toLowerCase() !== input.value.trim().toLowerCase()) { selected = null; notify(null); }
     input.setCustomValidity('');
     updateTag();
     clearTimeout(timer);

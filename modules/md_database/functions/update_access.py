@@ -1,5 +1,6 @@
 from modules.md_database.md_database import SessionLocal, Customer, Supplier, Vector, Driver, Vehicle, Material, Access, AccessStatus, Weighing, Operator, TypeAccess, CardRegistry
 from modules.md_database.functions.find_or_create_anagrafic import find_or_create_anagrafic
+from modules.md_database.functions.apply_vehicle_limits import apply_vehicle_limits
 from modules.md_database.interfaces.access import SetAccessDTO
 from modules.md_database.functions.get_access_by_vehicle_id_if_uncompete import get_access_by_vehicle_id_if_uncomplete
 from modules.md_database.functions.get_access_by_identify_if_uncomplete import get_access_by_identify_if_uncomplete
@@ -8,7 +9,7 @@ from sqlalchemy.orm import selectinload
 from fastapi import HTTPException
 from libs.lb_utils import has_non_none_value
 
-def update_access(id: int, data: SetAccessDTO, idInOut: int = None):
+def update_access(id: int, data: SetAccessDTO, idInOut: int = None, apply_limits: bool = False):
     """
     Aggiunge un record a una tabella specificata dinamicamente con gestione dei conflitti per SQLite.
     """
@@ -129,6 +130,10 @@ def update_access(id: int, data: SetAccessDTO, idInOut: int = None):
                         access.idVehicle = None
                 else:
                     access.idVehicle = data.vehicle.id
+
+                # dal form delle prenotazioni: tara e soglia massima vanno sul mezzo
+                if apply_limits:
+                    apply_vehicle_limits(session, Vehicle, access.idVehicle, data.vehicle)
 
                 if access.status != AccessStatus.CLOSED and current_reservation_vehicle != data.vehicle.id:
                     existing = get_access_by_vehicle_id_if_uncomplete(access.idVehicle)

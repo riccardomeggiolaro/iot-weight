@@ -1,5 +1,6 @@
 from modules.md_database.md_database import SessionLocal, Customer, Supplier, Vector, Driver, Vehicle, Material, Access, AccessStatus, TypeAccess, AccessMode, CardRegistry
 from modules.md_database.functions.find_or_create_anagrafic import find_or_create_anagrafic
+from modules.md_database.functions.apply_vehicle_limits import apply_vehicle_limits
 from modules.md_database.interfaces.access import AddAccessDTO
 from modules.md_database.functions.get_access_by_vehicle_id_if_uncompete import get_access_by_vehicle_id_if_uncomplete
 from modules.md_database.functions.get_access_by_identify_if_uncomplete import get_access_by_identify_if_uncomplete
@@ -8,7 +9,7 @@ from fastapi import HTTPException
 from libs.lb_utils import has_non_none_value
 from typing import Optional
 
-def add_access(data: AddAccessDTO, status: Optional[AccessStatus] = None):
+def add_access(data: AddAccessDTO, status: Optional[AccessStatus] = None, apply_limits: bool = False):
     """
     Aggiunge un record a una tabella specificata dinamicamente con gestione dei conflitti per SQLite.
     """
@@ -98,6 +99,10 @@ def add_access(data: AddAccessDTO, status: Optional[AccessStatus] = None):
                         data_to_check = data.vehicle.dict()
                         vehicle = find_or_create_anagrafic(session, current_model, add_vehicle)
                         add_access["idVehicle"] = vehicle.id
+
+            # dal form delle prenotazioni: tara e soglia massima vanno sul mezzo
+            if apply_limits:
+                apply_vehicle_limits(session, Vehicle, add_access["idVehicle"], data.vehicle)
 
             current_model = Material
             if not data.material.id:

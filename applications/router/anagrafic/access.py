@@ -790,7 +790,7 @@ class AccessRouter(PanelSirenRouter):
             body.vehicle.id = body.vehicle.id if body.vehicle.id not in [None, -1] else None
             body.material.id = body.material.id if body.material.id not in [None, -1] else None
 
-            data = add_access(body, status)
+            data = add_access(body, status, apply_limits=request is not None)
 
             get_access_data = get_data_by_id("access", data["id"])
 
@@ -806,6 +806,8 @@ class AccessRouter(PanelSirenRouter):
                 await self.broadcastAddAnagrafic("driver", {"driver": access.driver.json()})
             if not body.vehicle.id and access.idVehicle:
                 await self.broadcastAddAnagrafic("vehicle", {"vehicle": access.vehicle.json()})
+            elif request and access.idVehicle and (body.vehicle.tare is not None or body.vehicle.max_threshold is not None):
+                await self.broadcastUpdateAnagrafic("vehicle", {"vehicle": access.vehicle.json()})
             if not body.material.id and access.idMaterial:
                 material = Material(**access.material.__dict__)
                 await self.broadcastAddAnagrafic("material", {"material": material.json()})
@@ -826,7 +828,7 @@ class AccessRouter(PanelSirenRouter):
                 locked_data = get_data_by_attributes('lock_record', {"table_name": "access", "idRecord": id, "type": LockRecordType.UPDATE, "user_id": request.state.user.id})
                 if not locked_data:
                     raise HTTPException(status_code=403, detail=f"You need to block the access with id '{id}' before to update that")
-            data = update_access(id, body, idInOut)
+            data = update_access(id, body, idInOut, apply_limits=request is not None)
             get_access_data = get_data_by_id("access", data["id"])
             access = Access(**get_access_data)
             in_out = None
@@ -843,6 +845,8 @@ class AccessRouter(PanelSirenRouter):
                 await self.broadcastAddAnagrafic("driver", {"driver": access.driver.json()})
             if body.vehicle.id in [None, -1] and access.idVehicle:
                 await self.broadcastAddAnagrafic("vehicle", {"vehicle": access.vehicle.json()})
+            elif request and access.idVehicle and (body.vehicle.tare is not None or body.vehicle.max_threshold is not None):
+                await self.broadcastUpdateAnagrafic("vehicle", {"vehicle": access.vehicle.json()})
             if not idInOut and body.material.id in [None, -1] and access.idMaterial:
                 material = Material(**access.material.__dict__)
                 await self.broadcastAddAnagrafic("material", {"material": material.json()})
