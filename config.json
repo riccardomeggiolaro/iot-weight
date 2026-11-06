@@ -91,7 +91,7 @@
         "use_preset_weight": false,
         "use_recordings": false,
         "use_reservation": true,
-        "use_transit": false,
+        "use_transit": true,
         "use_white_list": false,
         "weighers": {
             "0": {
@@ -148,9 +148,9 @@
                                 ],
                                 "csv": {
                                     "generic": false,
-                                    "in": false,
-                                    "out": false,
-                                    "tare": false
+                                    "in": true,
+                                    "out": true,
+                                    "tare": true
                                 },
                                 "printer": {
                                     "generic": null,
@@ -168,7 +168,7 @@
                                     "generic": false,
                                     "in": false,
                                     "out": true,
-                                    "tare": false
+                                    "tare": true
                                 },
                                 "set_rele": {
                                     "generic": [
