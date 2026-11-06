@@ -29,14 +29,14 @@ export function renderStampe(el, { config, level }) {
   const ro = level < SUPER_ADMIN;
   if (ro) readonlyNotice(el);
 
-  let rows = section(el, 'Modelli di stampa', 'Il documento stampato e salvato in PDF per ogni tipo di pesata. Si modificano con il report designer.');
+  let rows = section(el, 'Modelli di stampa', 'Il documento stampato e salvato in PDF per ogni tipo di pesata. Si modificano con il report designer, dentro l\'app.');
   for (const r of REPORTS) {
     const row = document.createElement('div');
     row.className = 'settings-row';
     row.innerHTML = `
       <span class="settings-text"><span class="settings-label">${esc(r.label)}</span>
         <span class="settings-help">${esc(r.help)} File: <code>${esc(config[r.key] || '—')}</code></span></span>
-      ${ro ? '' : `<a class="btn" href="/report-designer/${r.designer}" target="_blank" rel="noopener">Apri nel designer ↗</a>`}`;
+      ${ro ? '' : `<a class="btn" href="#/designer/${r.designer}">Modifica</a>`}`;
     rows.appendChild(row);
   }
 
