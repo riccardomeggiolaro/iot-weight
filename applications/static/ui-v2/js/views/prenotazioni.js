@@ -30,10 +30,10 @@ const LINKS = [
 ];
 
 const STATUS = {
-  // Stati del server: Attesa/Aperto (nessuna pesata, Aperto è usato dai transiti), Entrato, Chiusa
-  Attesa: { label: 'In attesa', cls: 'info' },
-  Aperto: { label: 'In attesa', cls: 'info' },
-  Entrato: { label: 'In corso', cls: 'warn' },
+  // Stati del server: Attesa, Aperto (transiti), Entrato -> Attiva; Chiusa -> Conclusa
+  Attesa: { label: 'Attiva', cls: 'info' },
+  Aperto: { label: 'Attiva', cls: 'info' },
+  Entrato: { label: 'Attiva', cls: 'info' },
   Chiusa: { label: 'Conclusa', cls: '' },
 };
 
