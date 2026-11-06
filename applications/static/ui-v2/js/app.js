@@ -40,7 +40,7 @@ function navigate() {
     else a.removeAttribute('aria-current');
   });
   title.textContent = ROUTES[name].title;
-  document.title = `${ROUTES[name].title} · Pesa`;
+  document.title = `${ROUTES[name].title} · KINETRA Pesa`;
   cleanup = ROUTES[name].render(view);
 }
 
