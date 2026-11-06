@@ -55,17 +55,6 @@ const name = (obj, field = 'social_reason') => obj?.[field] || '';
 const dash = '<span class="muted">—</span>';
 const cell = v => (v === null || v === undefined || v === '' ? dash : esc(v));
 
-function waitingSince(a) {
-  // il timer parte dall'ultima pesata, altrimenti dalla creazione della prenotazione
-  const last = a.in_out?.length ? a.in_out[a.in_out.length - 1] : null;
-  return last?.weight2?.date || last?.weight1?.date || a.date_created;
-}
-function elapsed(since) {
-  const ms = Date.now() - new Date(since).getTime();
-  if (!Number.isFinite(ms) || ms < 0) return '—';
-  const m = Math.floor(ms / 60000), d = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60);
-  return `${d ? d + 'g ' : ''}${d || h ? h + 'h ' : ''}${m % 60}min`;
-}
 function operations(a) {
   const done = a.in_out?.filter(io => io.weight2 || io.idWeight2).length ?? 0;
   return a.number_in_out == null ? `${done} / ∞` : `${done} / ${a.number_in_out}`;
@@ -87,7 +76,6 @@ function renderSection(el, conf, tab) {
   let socket = null;
   let destroyed = false;
   let canWrite = false;
-  let tick = null;
 
   el.innerHTML = `
     <div class="page">
@@ -157,7 +145,6 @@ function renderSection(el, conf, tab) {
     cols.push(
       { key: 'status', label: 'Stato', sortable: false, render: r => { const s = STATUS[r.status] || { label: r.status, cls: '' }; return `<span class="badge ${s.cls}">${esc(s.label)}</span>`; } },
       { key: 'date_created', label: 'Creata il', sortable: false, className: 'nowrap', render: r => esc(formatDateTime(r.date_created)) },
-      { key: 'waiting', label: 'Attesa', sortable: false, className: 'nowrap', render: r => (r.type === 'Prenotazione' && r.status !== 'Chiusa') ? `<span class="elapsed" data-since="${esc(waitingSince(r))}">${esc(elapsed(waitingSince(r)))}</span>` : '' },
     );
 
     table = createDataTable(tableEl, {
@@ -193,10 +180,6 @@ function renderSection(el, conf, tab) {
       else if (b.dataset.do === 'undo') deleteLastWeighing(access, io);
       else if (b.dataset.do === 'img') showPictures(io, Number(b.dataset.n || 0));
     });
-
-    tick = setInterval(() => {
-      tableEl.querySelectorAll('.elapsed[data-since]').forEach(s => { s.textContent = elapsed(s.dataset.since); });
-    }, 30000);
   }
 
   function accessDetail(a) {
@@ -503,7 +486,6 @@ function renderSection(el, conf, tab) {
   return () => {
     destroyed = true;
     clearTimeout(reloadTimer);
-    clearInterval(tick);
     table?.destroy();
     socket?.close();
   };
