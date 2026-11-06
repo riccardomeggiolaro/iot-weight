@@ -66,11 +66,11 @@ export function renderPesa(el) {
       </div>
 
       <div class="area-side">
-        <section class="card" aria-labelledby="h-photo">
+        <section class="card" data-card="photo" aria-labelledby="h-photo">
           <div class="card-h"><h2 id="h-photo">Ultima foto</h2><span class="muted" data-slot="photo-time" style="font-size:12px"></span></div>
           <div class="card-b" data-slot="photo"></div>
         </section>
-        <section class="card" aria-labelledby="h-relays">
+        <section class="card" data-card="relays" aria-labelledby="h-relays">
           <div class="card-h"><h2 id="h-relays">Sbarre</h2></div>
           <div class="card-b" data-slot="relays"></div>
         </section>
@@ -179,13 +179,24 @@ export function renderPesa(el) {
       </button></li>`).join('');
   }
 
+  // Foto e sbarre si vedono solo se la pesa ha fotocamere attive o relè configurati;
+  // senza nessuno dei due la colonna sparisce e il peso prende lo spazio.
+  function renderSide() {
+    const hasCams = (current.node.events?.weighing?.cams || []).some(c => c.active) || !!current.lastPicture;
+    const hasRelays = Object.keys(current.relays).length > 0;
+    el.querySelector('[data-card="photo"]').hidden = !hasCams;
+    el.querySelector('[data-card="relays"]').hidden = !hasRelays;
+    $('.area-side').hidden = !hasCams && !hasRelays;
+    $('.pesa-grid').classList.toggle('no-side', !hasCams && !hasRelays);
+  }
+
   function renderPhoto(flash = false) {
+    renderSide();
     const p = current.lastPicture;
     const box = slot('photo');
     slot('photo-time').textContent = p ? formatTime(p.at) : '';
     if (!p) {
-      const cams = current.node.events?.weighing?.cams?.filter(c => c.active).length || 0;
-      box.innerHTML = `<div class="photo-empty">${cams ? 'Nessuna foto in questa sessione.<br>Comparirà alla prossima pesata.' : 'Nessuna fotocamera attiva su questa pesa.'}</div>`;
+      box.innerHTML = '<div class="photo-empty">Nessuna foto in questa sessione.<br>Comparirà alla prossima pesata.</div>';
     } else {
       const src = '/images' + (p.path_name.startsWith('/') ? '' : '/') + p.path_name;
       box.innerHTML = `<img class="photo" src="${esc(src)}" alt="Ultima foto della pesa ${esc(current.name)}">`;
@@ -197,7 +208,7 @@ export function renderPesa(el) {
   function renderRelays() {
     const box = slot('relays');
     const entries = Object.entries(current.relays);
-    if (!entries.length) { box.innerHTML = '<div class="empty">Nessuna sbarra configurata.</div>'; return; }
+    renderSide();
     box.innerHTML = entries.map(([n, v]) => `
       <div class="relay-row">
         <span class="light ${v === 1 ? 'open' : ''}" aria-hidden="true"></span>
