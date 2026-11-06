@@ -188,3 +188,9 @@ textarea.input { resize: vertical; font: inherit; }
 .backups-msg { padding: 12px 18px; }
 .log-view { white-space: pre-wrap; font-size: 12px; max-height: 60vh; overflow: auto; background: var(--surface-2); border-radius: 8px; padding: 12px; margin: 0; }
 .settings-row code { font-size: 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 5px; padding: 0 5px; }
+.device-form { padding: 6px 18px 0; }
+.device-form .form-grid { margin-bottom: 4px; }
+.device-status { font-size: 14px; margin: 8px 0 0; }
+.device-status.ok { color: var(--ok); font-weight: 600; }
+.device-status.err { color: var(--err); font-weight: 600; }
+.settings-actions.inline { padding: 12px 0 16px; }
