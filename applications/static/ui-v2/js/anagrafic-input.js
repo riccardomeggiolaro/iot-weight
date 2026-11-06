@@ -74,6 +74,7 @@ export function anagraficInput({ name, field, label, value = null, upper = false
       const exact = text && items.find(it => String(it[field] || '').toLowerCase() === text.toLowerCase());
       if (exact && (!selected || selected.id !== exact.id)) selected = { id: exact.id, text: exact[field] };
       if (document.activeElement === input) render();
+      else input.addEventListener('focus', render, { once: true });
       updateTag();
     } catch (_) { /* suggerimenti non disponibili: si può comunque scrivere */ }
   }
@@ -86,9 +87,12 @@ export function anagraficInput({ name, field, label, value = null, upper = false
     clearTimeout(timer);
     timer = setTimeout(search, 200);
   });
-  input.addEventListener('focus', () => { clearTimeout(timer); search(); });
+  // L'elenco si apre quando l'utente scrive, clicca sul campo o preme ↓; non per il solo focus
+  // (es. il focus automatico all'apertura del form), altrimenti coprirebbe i campi sotto.
+  input.addEventListener('mousedown', () => { clearTimeout(timer); if (list.hidden) search(); });
   input.addEventListener('blur', () => setTimeout(close, 150));
   input.addEventListener('keydown', e => {
+    if (e.key === 'ArrowDown' && list.hidden) { e.preventDefault(); search(); return; }
     if (list.hidden || !items.length) return;
     if (e.key === 'ArrowDown') { e.preventDefault(); active = (active + 1) % items.length; render(); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); active = (active - 1 + items.length) % items.length; render(); }

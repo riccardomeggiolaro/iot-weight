@@ -31,18 +31,23 @@ di `ARCHIVIO` non vengono mai toccate (né in inserimento né in aggiornamento).
 |----------------------|------------------------------------------|----------------------------------------|
 | `ID`                 | `MAX(ID) + 1`                            | ritenta in caso di chiave duplicata    |
 | `TIPO`               | `'P'` entrata / entrata+uscita, `'M'` solo uscita con tara | vedi sotto           |
-| `CLIENTE1`           | campo 14 – `numero_tessera`              |                                        |
-| `DESCR`              | campo 15 – `codice_tessera`              |                                        |
-| `DATA1` / `ORA1`     | campo 23 – `data1`                       | ora nel formato `HH.MM` (es. `11.58`)  |
-| `CK1`                | `<pesa>-` + campo 24 – `pid1`            | es. `P1-00000-00001`                   |
-| `PESO1`              | campo 25 – `peso1`                       |                                        |
-| `DATA2` / `ORA2`     | campo 26 – `data2`                       |                                        |
-| `CK2`                | `<pesa>-` + campo 27 – `pid2`            |                                        |
-| `PESO2`              | campo 28 – `peso2`                       |                                        |
-| `NETTO`              | campo 29 – `netto` (o `\|PESO1-PESO2\|`) | solo in uscita                         |
+| `CLIENTE1`           | campo 18 – `numero_tessera`              |                                        |
+| `DESCR`              | campo 19 – `codice_tessera`              |                                        |
+| `DATA1` / `ORA1`     | campo 28 – `data1`                       | ora nel formato `HH.MM` (es. `11.58`)  |
+| `CK1`                | `<pesa>-` + campo 29 – `pid1`            | es. `P1-00000-00001`                   |
+| `PESO1`              | campo 30 – `peso1`                       |                                        |
+| `DATA2` / `ORA2`     | campo 31 – `data2`                       |                                        |
+| `CK2`                | `<pesa>-` + campo 32 – `pid2`            |                                        |
+| `PESO2`              | campo 33 – `peso2`                       |                                        |
+| `NETTO`              | campo 34 – `netto` (o `\|PESO1-PESO2\|`) | solo in uscita                         |
 | `STATO_IMPORTAZIONE` | sempre `1`                               |                                        |
 
 (I numeri di campo sono 1-based, come nella documentazione del CSV.)
+
+Il watcher riconosce anche il **formato precedente** del CSV (29 colonne, soggetto unico):
+in quel caso legge tessera, date, PID e pesi dalle posizioni vecchie (campi 14-15 e 23-29).
+Il formato attuale (34 colonne) ha cliente, fornitore, vettore e autista separati, ognuno con
+id, ragione sociale, codice e descrizione, e il codice del materiale.
 
 `DATA*` e `ORA*` vengono adattate al tipo della colonna letto da
 `ALL_TAB_COLUMNS` all'avvio (`DATE`/`TIMESTAMP`, `NUMBER` o `VARCHAR2`).

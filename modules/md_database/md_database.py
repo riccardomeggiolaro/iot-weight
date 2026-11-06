@@ -36,8 +36,8 @@ class Customer(Base):
     __tablename__ = 'customer'
     id = Column(Integer, primary_key=True, index=True)
     social_reason = Column(String(collation="NOCASE"), index=True, unique=True)
+    description = Column(String, nullable=True)
     code = Column(String(collation="NOCASE"), index=True, unique=True, nullable=True)  # codice nel gestionale
-    cfpiva = Column(String(collation="NOCASE"), nullable=True)
     archived = Column(Boolean, default=False, nullable=False, server_default=text("0"))
     date_created = Column(DateTime, server_default=func.now(), default=datetime.now)
 
@@ -48,8 +48,8 @@ class Supplier(Base):
     __tablename__ = 'supplier'
     id = Column(Integer, primary_key=True, index=True)
     social_reason = Column(String(collation="NOCASE"), index=True, unique=True)
+    description = Column(String, nullable=True)
     code = Column(String(collation="NOCASE"), index=True, unique=True, nullable=True)  # codice nel gestionale
-    cfpiva = Column(String(collation="NOCASE"), nullable=True)
     archived = Column(Boolean, default=False, nullable=False, server_default=text("0"))
     date_created = Column(DateTime, server_default=func.now(), default=datetime.now)
 
@@ -60,8 +60,8 @@ class Vector(Base):
     __tablename__ = 'vector'
     id = Column(Integer, primary_key=True, index=True)
     social_reason = Column(String(collation="NOCASE"), index=True, unique=True)
+    description = Column(String, nullable=True)
     code = Column(String(collation="NOCASE"), index=True, unique=True, nullable=True)  # codice nel gestionale
-    cfpiva = Column(String(collation="NOCASE"), nullable=True)
     archived = Column(Boolean, default=False, nullable=False, server_default=text("0"))
     date_created = Column(DateTime, server_default=func.now(), default=datetime.now)
 
@@ -71,8 +71,9 @@ class Vector(Base):
 class Driver(Base):
     __tablename__ = 'driver'
     id = Column(Integer, primary_key=True, index=True)
-    social_reason = Column(String)
-    telephone = Column(String(collation="NOCASE"), index=True, nullable=True)
+    social_reason = Column(String)  # nome e cognome
+    description = Column(String, nullable=True)
+    code = Column(String(collation="NOCASE"), index=True, unique=True, nullable=True)  # codice nel gestionale
     archived = Column(Boolean, default=False, nullable=False, server_default=text("0"))
     date_created = Column(DateTime, server_default=func.now(), default=datetime.now)
 
@@ -289,15 +290,16 @@ class InOut(Base):
     vehicle_description = Column(String, nullable=True)
     customer_name = Column(String(collation="NOCASE"), nullable=True, index=True)
     customer_code = Column(String(collation="NOCASE"), nullable=True)
-    customer_cfpiva = Column(String(collation="NOCASE"), nullable=True)
+    customer_description = Column(String, nullable=True)
     supplier_name = Column(String(collation="NOCASE"), nullable=True, index=True)
     supplier_code = Column(String(collation="NOCASE"), nullable=True)
-    supplier_cfpiva = Column(String(collation="NOCASE"), nullable=True)
+    supplier_description = Column(String, nullable=True)
     vector_name = Column(String(collation="NOCASE"), nullable=True, index=True)
     vector_code = Column(String(collation="NOCASE"), nullable=True)
-    vector_cfpiva = Column(String(collation="NOCASE"), nullable=True)
+    vector_description = Column(String, nullable=True)
     driver_name = Column(String(collation="NOCASE"), nullable=True)
-    driver_telephone = Column(String, nullable=True)
+    driver_code = Column(String(collation="NOCASE"), nullable=True)
+    driver_description = Column(String, nullable=True)
     material_description = Column(String(collation="NOCASE"), nullable=True, index=True)
     material_code = Column(String(collation="NOCASE"), nullable=True)
     card_number = Column(String(collation="NOCASE"), nullable=True)
@@ -372,10 +374,10 @@ table_models = {
 }
 
 upload_file_datas_required_columns = {
-    "customer": {"social_reason": str, "code": str, "cfpiva": str},
-    "supplier": {"social_reason": str, "code": str, "cfpiva": str},
-    "vector": {"social_reason": str, "code": str, "cfpiva": str},
-    "driver": {"social_reason": str, "telephone": str},
+    "customer": {"social_reason": str, "description": str, "code": str},
+    "supplier": {"social_reason": str, "description": str, "code": str},
+    "vector": {"social_reason": str, "description": str, "code": str},
+    "driver": {"social_reason": str, "description": str, "code": str},
     "vehicle": {"plate": str, "description": str, "tare": int},
     "material": {"description": str, "code": str},
     "operator": {"description": str},
@@ -882,10 +884,10 @@ def migrate_subject_to_customer_supplier():
                 params = {"id": sid, "social_reason": social_reason, "telephone": telephone, "cfpiva": cfpiva, "date_created": date_created}
                 # stesso id del vecchio soggetto: i riferimenti si convertono senza tabelle di appoggio
                 if 'CUSTOMER' in kinds:
-                    conn.execute(text("INSERT INTO customer (id, social_reason, cfpiva, date_created) VALUES (:id, :social_reason, :cfpiva, :date_created)"), params)
+                    conn.execute(text("INSERT INTO customer (id, social_reason, description, date_created) VALUES (:id, :social_reason, :cfpiva, :date_created)"), params)
                     n_customers += 1
                 if 'SUPPLIER' in kinds:
-                    conn.execute(text("INSERT INTO supplier (id, social_reason, cfpiva, date_created) VALUES (:id, :social_reason, :cfpiva, :date_created)"), params)
+                    conn.execute(text("INSERT INTO supplier (id, social_reason, description, date_created) VALUES (:id, :social_reason, :cfpiva, :date_created)"), params)
                     n_suppliers += 1
 
             for t in refs:
@@ -908,10 +910,10 @@ def migrate_subject_to_customer_supplier():
 # ── Stampino dei dati sulla pesata (in_out) ─────────────────────────────────
 # Gruppi: colonna FK -> (tabella, [(colonna sorgente, colonna dello stampino)])
 _SNAPSHOT_GROUPS = {
-    "idCustomer": ("customer", [("social_reason", "customer_name"), ("code", "customer_code"), ("cfpiva", "customer_cfpiva")]),
-    "idSupplier": ("supplier", [("social_reason", "supplier_name"), ("code", "supplier_code"), ("cfpiva", "supplier_cfpiva")]),
-    "idVector": ("vector", [("social_reason", "vector_name"), ("code", "vector_code"), ("cfpiva", "vector_cfpiva")]),
-    "idDriver": ("driver", [("social_reason", "driver_name"), ("telephone", "driver_telephone")]),
+    "idCustomer": ("customer", [("social_reason", "customer_name"), ("code", "customer_code"), ("description", "customer_description")]),
+    "idSupplier": ("supplier", [("social_reason", "supplier_name"), ("code", "supplier_code"), ("description", "supplier_description")]),
+    "idVector": ("vector", [("social_reason", "vector_name"), ("code", "vector_code"), ("description", "vector_description")]),
+    "idDriver": ("driver", [("social_reason", "driver_name"), ("code", "driver_code"), ("description", "driver_description")]),
     "idMaterial": ("material", [("description", "material_description"), ("code", "material_code")]),
     "idCardRegistry": ("card_registry", [("number", "card_number"), ("code", "card_code")]),
 }
@@ -973,6 +975,14 @@ def migrate_in_out_snapshot():
     """Compila lo stampino delle pesate già esistenti (una sola volta, dove manca)."""
     try:
         with engine.connect() as conn:
+            cols = {row[1] for row in conn.execute(text("PRAGMA table_info('in_out')")).fetchall()}
+            # stampini della versione precedente: CF/P.IVA e telefono autista -> descrizione
+            for old, new in (("customer_cfpiva", "customer_description"), ("supplier_cfpiva", "supplier_description"),
+                             ("vector_cfpiva", "vector_description"), ("driver_telephone", "driver_description")):
+                if old in cols and new in cols:
+                    conn.execute(text(f'UPDATE in_out SET "{new}" = "{old}" WHERE "{new}" IS NULL AND "{old}" IS NOT NULL'))
+                    conn.execute(text(f'UPDATE in_out SET "{old}" = NULL'))
+            conn.commit()
             pending = conn.execute(text("SELECT COUNT(*) FROM in_out WHERE snapshot_version IS NULL")).scalar()
             if not pending:
                 return
@@ -1013,8 +1023,9 @@ def _rebuild_table(conn, model):
 def migrate_anagrafiche_schema():
     """
     Allinea le anagrafiche al modello:
-    - clienti, fornitori e vettori non hanno più il telefono; telefono e CF/P.IVA non sono più unici
-      (due sedi della stessa ditta, stesso centralino): la tabella viene ricreata;
+    - clienti, fornitori, vettori e autisti hanno ragione sociale, descrizione e codice: il vecchio
+      CF/P.IVA (telefono per gli autisti) viene copiato nella descrizione, poi la tabella viene
+      ricreata senza le colonne e i vincoli UNIQUE non più previsti;
     - crea gli indici previsti dal modello che mancano (es. codice unico sui materiali).
     """
     try:
@@ -1032,6 +1043,10 @@ def migrate_anagrafiche_schema():
                         info = conn.execute(text(f'PRAGMA index_info("{idx[1]}")')).fetchall()
                         if len(info) == 1:
                             db_unique.add(info[0][2])
+                # i vecchi CF/P.IVA (e il telefono degli autisti) diventano la descrizione
+                old_col = "telephone" if name == "driver" else "cfpiva"
+                if old_col in db_cols and "description" in db_cols and old_col not in model_cols:
+                    conn.execute(text(f'UPDATE "{name}" SET description = "{old_col}" WHERE description IS NULL AND "{old_col}" IS NOT NULL'))
                 if (db_cols - model_cols) or (db_unique - model_unique):
                     _rebuild_table(conn, model)
                     lb_log.info(f"Tabella '{name}' aggiornata (colonne/vincoli)")

@@ -3,12 +3,12 @@ from typing import Optional, List
 from modules.md_database.functions.get_data_by_id import get_data_by_id
 from datetime import datetime
 
-# Anagrafica vettori: ragione sociale (obbligatoria), codice del gestionale, CF/P.IVA.
+# Anagrafica vettori: ragione sociale (obbligatoria), descrizione e codice del gestionale.
 
 class Vector(BaseModel):
 	social_reason: Optional[str] = None
 	code: Optional[str] = None
-	cfpiva: Optional[str] = None
+	description: Optional[str] = None
 	archived: Optional[bool] = False
 	date_created: Optional[datetime] = None
 	reservations: List[any] = []
@@ -21,7 +21,7 @@ class Vector(BaseModel):
 class VectorDataDTO(BaseModel):
 	social_reason: Optional[str] = None
 	code: Optional[str] = None
-	cfpiva: Optional[str] = None
+	description: Optional[str] = None
 	id: Optional[int] = None
 
 	@validator('id', pre=True, always=True)
@@ -34,7 +34,7 @@ class VectorDataDTO(BaseModel):
 class VectorDTO(BaseModel):
 	social_reason: Optional[str] = None
 	code: Optional[str] = None
-	cfpiva: Optional[str] = None
+	description: Optional[str] = None
 	id: Optional[int] = None
 
 	@validator('id', pre=True, always=True)
@@ -46,7 +46,7 @@ class VectorDTO(BaseModel):
 			else:
 				values['social_reason'] = data.get('social_reason')
 				values['code'] = data.get('code')
-				values['cfpiva'] = data.get('cfpiva')
+				values['description'] = data.get('description')
 		return v
 
 	class Config:
@@ -56,7 +56,7 @@ class VectorDTO(BaseModel):
 class AddVectorDTO(BaseModel):
 	social_reason: str
 	code: Optional[str] = None
-	cfpiva: Optional[str] = None
+	description: Optional[str] = None
 
 	@field_validator('*', mode='before')
 	@classmethod
@@ -68,15 +68,15 @@ class AddVectorDTO(BaseModel):
 class SetVectorDTO(BaseModel):
 	social_reason: Optional[str] = None
 	code: Optional[str] = None
-	cfpiva: Optional[str] = None
+	description: Optional[str] = None
 
 	@root_validator(pre=True)
 	def check_at_least_one_field(cls, values):
-		if not values.get('social_reason') and not values.get('code') and not values.get('cfpiva'):
-			raise ValueError('At least one of "social_reason", "code" or "cfpiva" must be provided.')
+		if not values.get('social_reason') and not values.get('code') and not values.get('description'):
+			raise ValueError('At least one of "social_reason", "code" or "description" must be provided.')
 		return values
 
 class FilterVectorDTO(BaseModel):
 	social_reason: Optional[str] = None
 	code: Optional[str] = None
-	cfpiva: Optional[str] = None
+	description: Optional[str] = None

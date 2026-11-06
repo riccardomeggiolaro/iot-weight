@@ -147,18 +147,19 @@ def generate_csv_report(variables: ReportVariables):
         variables.customer.id if variables.customer.id else '',
         variables.customer.social_reason if variables.customer.social_reason else '',
         variables.customer.code if variables.customer.code else '',
-        variables.customer.cfpiva if variables.customer.cfpiva else '',
+        variables.customer.description if variables.customer.description else '',
         variables.supplier.id if variables.supplier.id else '',
         variables.supplier.social_reason if variables.supplier.social_reason else '',
         variables.supplier.code if variables.supplier.code else '',
-        variables.supplier.cfpiva if variables.supplier.cfpiva else '',
+        variables.supplier.description if variables.supplier.description else '',
         variables.vector.id if variables.vector.id else '',
         variables.vector.social_reason if variables.vector.social_reason else '',
         variables.vector.code if variables.vector.code else '',
-        variables.vector.cfpiva if variables.vector.cfpiva else '',
+        variables.vector.description if variables.vector.description else '',
         variables.driver.id if variables.driver.id else '',
         variables.driver.social_reason if variables.driver.social_reason else '',
-        variables.driver.telephone if variables.driver.telephone else '',
+        variables.driver.code if variables.driver.code else '',
+        variables.driver.description if variables.driver.description else '',
         variables.card.id if variables.card.id else '',
         variables.card.number if variables.card.number else '',
         variables.card.code if variables.card.code else '',
@@ -167,8 +168,9 @@ def generate_csv_report(variables: ReportVariables):
         variables.vehicle.description if variables.vehicle.description else '',
         variables.material.id if variables.material.id else '',
         variables.material.description if variables.material.description else '',
-        variables.note,
-        variables.document_reference,
+        variables.material.code if variables.material.code else '',
+        variables.note or '',
+        variables.document_reference or '',
         variables.weight1.date if variables.weight1.date else '',
         variables.weight1.pid if variables.weight1.pid else '',
         variables.weight1.weight if variables.weight1.weight else '',
@@ -226,7 +228,7 @@ def _snapshot(in_out, id_attr, fields, relation=None, relation_fields=None):
 def _company(kind):
     def resolve(in_out):
         return _snapshot(in_out, f"id{kind.capitalize()}",
-                         {"social_reason": f"{kind}_name", "code": f"{kind}_code", "cfpiva": f"{kind}_cfpiva"},
+                         {"social_reason": f"{kind}_name", "code": f"{kind}_code", "description": f"{kind}_description"},
                          lambda io: getattr(io, kind, None))
     return resolve
 
@@ -237,7 +239,7 @@ resolve_in_out_vector = _company("vector")
 
 
 def resolve_in_out_driver(in_out):
-    return _snapshot(in_out, "idDriver", {"social_reason": "driver_name", "telephone": "driver_telephone"},
+    return _snapshot(in_out, "idDriver", {"social_reason": "driver_name", "code": "driver_code", "description": "driver_description"},
                      lambda io: io.driver)
 
 
@@ -318,6 +320,8 @@ _SUBJECT_LINE = (
 _RE_TYPE_AND_NAME = _re.compile(r"\{\{\s*typeSubject\s*\}\}\s*:\s*(?:&nbsp;|\s)*\{\{\s*subject\.social_reason\s*\}\}")
 _RE_TYPE = _re.compile(r"\{\{\s*typeSubject\s*\}\}")
 _RE_FIELD = _re.compile(r"\{\{\s*subject\.(\w+)\s*\}\}")
+_RE_CFPIVA = _re.compile(r"\b(customer|supplier|vector)\.cfpiva\b")
+_RE_DRIVER_PHONE = _re.compile(r"\bdriver\.telephone\b")
 
 
 def migrate_subject_in_template(text: str) -> str:
@@ -332,6 +336,9 @@ def migrate_subject_in_template(text: str) -> str:
         "{{ customer." + m[1] + " if customer and customer." + m[1] +
         " else (supplier." + m[1] + " if supplier else '') }}"
     ), text)
+    # CF/P.IVA (clienti, fornitori, vettori) e telefono (autisti) sono diventati la descrizione
+    text = _RE_CFPIVA.sub(lambda m: m[1] + ".description", text)
+    text = _RE_DRIVER_PHONE.sub("driver.description", text)
     return text
 
 
@@ -348,7 +355,7 @@ def migrate_report_templates(reports_dir) -> int:
             try:
                 with open(path, "r", encoding="utf-8") as f:
                     original = f.read()
-                if "typeSubject" not in original and "subject." not in original:
+                if not any(k in original for k in ("typeSubject", "subject.", "cfpiva", "driver.telephone")):
                     continue
                 updated = migrate_subject_in_template(original)
                 if updated == original:

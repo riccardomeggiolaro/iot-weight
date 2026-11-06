@@ -15,22 +15,29 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 # --- Dati di esempio ---
-SOGGETTI = [
-    ("Cliente", 1, "Baronpesi Srl",       "0444370720", "02331370243"),
-    ("Cliente", 2, "Metalli Vicentini",   "0444123456", "01234560243"),
-    ("Cliente", 3, "Rottami Nord Est",    "0445987654", "03456780243"),
+# (id, ragione sociale, codice gestionale, descrizione)
+CLIENTI = [
+    (1, "Baronpesi Srl",       "C001", "Sede Vicenza"),
+    (2, "Metalli Vicentini",   "C002", ""),
+    (3, "Rottami Nord Est",    "",     "Cliente occasionale"),
+]
+
+FORNITORI = [
+    (1, "Acciaierie Venete",   "F001", ""),
+    (2, "Recuperi Metalli",    "F002", "Ritiro rottame"),
+    None,                       # pesata senza fornitore
 ]
 
 VETTORI = [
-    (1, "DHL",          "199199345", "00754800159"),
-    (2, "BRT",          "199100100", "01234500159"),
-    (3, "Fercam",       "0471123456","02345600159"),
+    (1, "DHL",          "V001", ""),
+    (2, "BRT",          "V002", ""),
+    (3, "Fercam",       "",     "Trasporti Bolzano"),
 ]
 
 AUTISTI = [
-    (1, "Marco Ruggero",   "3471234567"),
-    (2, "Luca Bianchi",    "3389876543"),
-    (3, "Giorgio Ferrari", "3351122334"),
+    (1, "Marco Ruggero",   "A01", ""),
+    (2, "Luca Bianchi",    "",    "Autista esterno"),
+    (3, "Giorgio Ferrari", "A03", ""),
 ]
 
 TESSERE = [
@@ -46,10 +53,10 @@ VEICOLI = [
 ]
 
 MATERIALI = [
-    (1, "Ferro"),
-    (2, "Rame"),
-    (3, "Alluminio"),
-    (4, "Acciaio inox"),
+    (1, "Ferro",        "M01"),
+    (2, "Rame",         "M02"),
+    (3, "Alluminio",    "M03"),
+    (4, "Acciaio inox", ""),
 ]
 
 NOTE_LIST = [
@@ -71,7 +78,8 @@ def genera_pid(n: int) -> str:
 
 def genera_riga(n: int) -> list:
     """Genera una riga CSV con dati realistici."""
-    sogg    = random.choice(SOGGETTI)
+    cli     = random.choice(CLIENTI)
+    forn    = random.choice(FORNITORI) or ("", "", "", "")
     vett    = random.choice(VETTORI)
     aut     = random.choice(AUTISTI)
     tess    = random.choice(TESSERE)
@@ -94,35 +102,28 @@ def genera_riga(n: int) -> list:
     fmt = "%d/%m/%Y %H:%M"
 
     return [
-        sogg[0],                    #  0 tipo_soggetto
-        str(sogg[1]),               #  1 id_soggetto
-        sogg[2],                    #  2 ragione_sociale_soggetto
-        sogg[3],                    #  3 cell_soggetto
-        sogg[4],                    #  4 cfpiva_soggetto
-        str(vett[0]),               #  5 id_vettore
-        vett[1],                    #  6 ragione_sociale_vettore
-        vett[2],                    #  7 cell_vettore
-        vett[3],                    #  8 cfpiva_vettore
-        str(aut[0]),                #  9 id_autista
-        aut[1],                     # 10 ragione_sociale_autista
-        aut[2],                     # 11 cell_autista
-        str(tess[0]),               # 12 id_tessera
-        tess[1],                    # 13 numero_tessera
-        tess[2],                    # 14 codice_tessera
-        str(veic[0]),               # 15 id_veicolo
-        veic[1],                    # 16 targa_veicolo
-        veic[2],                    # 17 descrizione_veicolo
-        str(mat[0]),                # 18 id_materiale
-        mat[1],                     # 19 descrizione_materiale
-        nota,                       # 20 note
-        bolla,                      # 21 referenza_documento
-        data1.strftime(fmt),        # 22 data1
-        pid1,                       # 23 pid1
-        str(peso1),                 # 24 peso1
-        data2.strftime(fmt),        # 25 data2
-        pid2,                       # 26 pid2
-        str(peso2),                 # 27 peso2
-        str(abs(peso1 - peso2)),    # 28 netto
+        str(cli[0]), cli[1], cli[2], cli[3],        #  0- 3 cliente: id, ragione sociale, codice, descrizione
+        str(forn[0]), forn[1], forn[2], forn[3],    #  4- 7 fornitore
+        str(vett[0]), vett[1], vett[2], vett[3],    #  8-11 vettore
+        str(aut[0]), aut[1], aut[2], aut[3],        # 12-15 autista: id, nome e cognome, codice, descrizione
+        str(tess[0]),               # 16 id_tessera
+        tess[1],                    # 17 numero_tessera
+        tess[2],                    # 18 codice_tessera
+        str(veic[0]),               # 19 id_veicolo
+        veic[1],                    # 20 targa_veicolo
+        veic[2],                    # 21 descrizione_veicolo
+        str(mat[0]),                # 22 id_materiale
+        mat[1],                     # 23 descrizione_materiale
+        mat[2],                     # 24 codice_materiale
+        nota,                       # 25 note
+        bolla,                      # 26 referenza_documento
+        data1.strftime(fmt),        # 27 data1
+        pid1,                       # 28 pid1
+        str(peso1),                 # 29 peso1
+        data2.strftime(fmt),        # 30 data2
+        pid2,                       # 31 pid2
+        str(peso2),                 # 32 peso2
+        str(abs(peso1 - peso2)),    # 33 netto
     ]
 
 
@@ -142,12 +143,13 @@ def main():
     out_dir.mkdir(parents=True, exist_ok=True)
 
     campi = [
-        "tipo_soggetto","id_soggetto","ragione_sociale_soggetto","cell_soggetto","cfpiva_soggetto",
-        "id_vettore","ragione_sociale_vettore","cell_vettore","cfpiva_vettore",
-        "id_autista","ragione_sociale_autista","cell_autista",
+        "id_cliente","ragione_sociale_cliente","codice_cliente","descrizione_cliente",
+        "id_fornitore","ragione_sociale_fornitore","codice_fornitore","descrizione_fornitore",
+        "id_vettore","ragione_sociale_vettore","codice_vettore","descrizione_vettore",
+        "id_autista","nome_autista","codice_autista","descrizione_autista",
         "id_tessera","numero_tessera","codice_tessera",
         "id_veicolo","targa_veicolo","descrizione_veicolo",
-        "id_materiale","descrizione_materiale","note","referenza_documento",
+        "id_materiale","descrizione_materiale","codice_materiale","note","referenza_documento",
         "data1","pid1","peso1","data2","pid2","peso2","netto",
     ]
 
@@ -155,7 +157,7 @@ def main():
         riga = genera_riga(i)
         # Nome file come lo genera il sistema in uscita: <pesa>_<pid1>_<pid2>.csv
         pesa = args.pesa or random.choice(PESE)
-        file_path = out_dir / f"{pesa}_{riga[23]}_{riga[26]}.csv"
+        file_path = out_dir / f"{pesa}_{riga[28]}_{riga[31]}.csv"
 
         with open(file_path, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f, delimiter=";")

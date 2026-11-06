@@ -3,9 +3,12 @@ from typing import Optional, List
 from modules.md_database.functions.get_data_by_id import get_data_by_id
 from datetime import datetime
 
+# Anagrafica autisti (ragione sociale = nome e cognome): ragione sociale (obbligatoria), descrizione e codice del gestionale.
+
 class Driver(BaseModel):
-	social_reason:  Optional[str] = None
-	telephone: Optional[str] = None
+	social_reason: Optional[str] = None
+	code: Optional[str] = None
+	description: Optional[str] = None
 	archived: Optional[bool] = False
 	date_created: Optional[datetime] = None
 	reservations: List[any] = []
@@ -16,8 +19,9 @@ class Driver(BaseModel):
 		arbitrary_types_allowed = True
 
 class DriverDataDTO(BaseModel):
-	social_reason:  Optional[str] = None
-	telephone: Optional[str] = None
+	social_reason: Optional[str] = None
+	code: Optional[str] = None
+	description: Optional[str] = None
 	id: Optional[int] = None
 
 	@validator('id', pre=True, always=True)
@@ -28,8 +32,9 @@ class DriverDataDTO(BaseModel):
 		return v
 
 class DriverDTO(BaseModel):
-	social_reason:  Optional[str] = None
-	telephone: Optional[str] = None
+	social_reason: Optional[str] = None
+	code: Optional[str] = None
+	description: Optional[str] = None
 	id: Optional[int] = None
 
 	@validator('id', pre=True, always=True)
@@ -40,7 +45,8 @@ class DriverDTO(BaseModel):
 				raise ValueError('Id not exist in driver')
 			else:
 				values['social_reason'] = data.get('social_reason')
-				values['telephone'] = data.get('telephone')
+				values['code'] = data.get('code')
+				values['description'] = data.get('description')
 		return v
 
 	class Config:
@@ -48,28 +54,29 @@ class DriverDTO(BaseModel):
 		arbitrary_types_allowed = True
 
 class AddDriverDTO(BaseModel):
-	social_reason:  str
-	telephone: Optional[str] = None
+	social_reason: str
+	code: Optional[str] = None
+	description: Optional[str] = None
 
 	@field_validator('*', mode='before')
 	@classmethod
 	def empty_str_to_none(cls, value, info):
-		if isinstance(value, str) and value == "":
+		if isinstance(value, str) and value.strip() == "":
 			return None
-		return value
+		return value.strip() if isinstance(value, str) else value
 
 class SetDriverDTO(BaseModel):
-	social_reason:  Optional[str] = None
-	telephone: Optional[str] = None
+	social_reason: Optional[str] = None
+	code: Optional[str] = None
+	description: Optional[str] = None
 
 	@root_validator(pre=True)
 	def check_at_least_one_field(cls, values):
-		social_reason = values.get('social_reason')
-		telephone = values.get('telephone')
-		if not social_reason and not telephone:
-			raise ValueError('At least one of "social_reason" or "telephone" must be provided.')
+		if not values.get('social_reason') and not values.get('code') and not values.get('description'):
+			raise ValueError('At least one of "social_reason", "code" or "description" must be provided.')
 		return values
-	
+
 class FilterDriverDTO(BaseModel):
-	social_reason:  Optional[str] = None
-	telephone: Optional[str] = None
+	social_reason: Optional[str] = None
+	code: Optional[str] = None
+	description: Optional[str] = None

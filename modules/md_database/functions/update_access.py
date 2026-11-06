@@ -38,7 +38,7 @@ def update_access(id: int, data: SetAccessDTO, idInOut: int = None):
                     add_customer = {
                         "social_reason": data.customer.social_reason if data.customer.social_reason != "" else None,
                         "code": data.customer.code if data.customer.code != "" else None,
-                        "cfpiva": data.customer.cfpiva if data.customer.cfpiva != "" else None
+                        "description": data.customer.description if data.customer.description != "" else None
                     }
                     if has_non_none_value(add_customer):
                         data_to_check = data.customer.dict()
@@ -55,7 +55,7 @@ def update_access(id: int, data: SetAccessDTO, idInOut: int = None):
                     add_supplier = {
                         "social_reason": data.supplier.social_reason if data.supplier.social_reason != "" else None,
                         "code": data.supplier.code if data.supplier.code != "" else None,
-                        "cfpiva": data.supplier.cfpiva if data.supplier.cfpiva != "" else None
+                        "description": data.supplier.description if data.supplier.description != "" else None
                     }
                     if has_non_none_value(add_supplier):
                         data_to_check = data.supplier.dict()
@@ -72,7 +72,7 @@ def update_access(id: int, data: SetAccessDTO, idInOut: int = None):
                     add_vector = {
                         "social_reason": data.vector.social_reason if data.vector.social_reason != "" else None,
                         "code": data.vector.code if data.vector.code != "" else None,
-                        "cfpiva": data.vector.cfpiva if data.vector.cfpiva != "" else None
+                        "description": data.vector.description if data.vector.description != "" else None
                     }
                     if has_non_none_value(add_vector):
                         data_to_check = data.vector.dict()
@@ -88,7 +88,7 @@ def update_access(id: int, data: SetAccessDTO, idInOut: int = None):
                 if data.driver.id in [None, -1]:
                     add_driver = {
                         "social_reason": data.driver.social_reason if data.driver.social_reason != "" else None,
-                        "telephone": data.driver.telephone if data.driver.telephone != "" else None
+                        "code": data.driver.code if data.driver.code != "" else None, "description": data.driver.description if data.driver.description != "" else None
                     }
                     if has_non_none_value(add_driver):
                         data_to_check = data.driver.dict()
@@ -191,7 +191,7 @@ def update_access(id: int, data: SetAccessDTO, idInOut: int = None):
                 add_customer = {
                     "social_reason": data.customer.social_reason if data.customer.social_reason != "" else None,
                     "code": data.customer.code if data.customer.code != "" else None,
-                    "cfpiva": data.customer.cfpiva if data.customer.cfpiva != "" else None
+                    "description": data.customer.description if data.customer.description != "" else None
                 }
                 if has_non_none_value(add_customer):
                     data_to_check = data.customer.dict()
@@ -217,7 +217,7 @@ def update_access(id: int, data: SetAccessDTO, idInOut: int = None):
                 add_supplier = {
                     "social_reason": data.supplier.social_reason if data.supplier.social_reason != "" else None,
                     "code": data.supplier.code if data.supplier.code != "" else None,
-                    "cfpiva": data.supplier.cfpiva if data.supplier.cfpiva != "" else None
+                    "description": data.supplier.description if data.supplier.description != "" else None
                 }
                 if has_non_none_value(add_supplier):
                     data_to_check = data.supplier.dict()
@@ -243,7 +243,7 @@ def update_access(id: int, data: SetAccessDTO, idInOut: int = None):
                 add_vector = {
                     "social_reason": data.vector.social_reason if data.vector.social_reason != "" else None,
                     "code": data.vector.code if data.vector.code != "" else None,
-                    "cfpiva": data.vector.cfpiva if data.vector.cfpiva != "" else None
+                    "description": data.vector.description if data.vector.description != "" else None
                 }
                 if has_non_none_value(add_vector):
                     data_to_check = data.vector.dict()
@@ -268,7 +268,7 @@ def update_access(id: int, data: SetAccessDTO, idInOut: int = None):
             if idInOut and data.driver.id in [None, -1]:
                 add_driver = {
                     "social_reason": data.driver.social_reason if data.driver.social_reason != "" else None,
-                    "telephone": data.driver.telephone if data.driver.telephone != "" else None
+                    "code": data.driver.code if data.driver.code != "" else None, "description": data.driver.description if data.driver.description != "" else None
                 }
                 if has_non_none_value(add_driver):
                     data_to_check = data.driver.dict()

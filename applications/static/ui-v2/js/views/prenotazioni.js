@@ -23,10 +23,10 @@ const TAB_KEYS = Object.keys(TABS);
 // Anagrafiche collegate a una prenotazione/pesata: chiave API, campo mostrato, etichetta
 // snap: colonna dello "stampino" della pesata (dati com'erano al momento della pesata)
 const LINKS = [
-  { key: 'customer', field: 'social_reason', label: 'Cliente', snap: 'customer_name', secondary: r => r.code || r.cfpiva },
-  { key: 'supplier', field: 'social_reason', label: 'Fornitore', snap: 'supplier_name', secondary: r => r.code || r.cfpiva },
-  { key: 'vector', field: 'social_reason', label: 'Vettore', snap: 'vector_name', secondary: r => r.code || r.cfpiva },
-  { key: 'driver', field: 'social_reason', label: 'Autista', snap: 'driver_name', secondary: r => r.telephone },
+  { key: 'customer', field: 'social_reason', label: 'Cliente', snap: 'customer_name', secondary: r => r.code || r.description },
+  { key: 'supplier', field: 'social_reason', label: 'Fornitore', snap: 'supplier_name', secondary: r => r.code || r.description },
+  { key: 'vector', field: 'social_reason', label: 'Vettore', snap: 'vector_name', secondary: r => r.code || r.description },
+  { key: 'driver', field: 'social_reason', label: 'Autista', snap: 'driver_name', secondary: r => r.code || r.description },
   { key: 'material', field: 'description', label: 'Materiale', snap: 'material_description', secondary: r => r.code },
 ];
 
