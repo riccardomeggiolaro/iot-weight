@@ -40,7 +40,7 @@ function navigate() {
     else a.removeAttribute('aria-current');
   });
   title.textContent = ROUTES[name].title;
-  document.title = `${ROUTES[name].title} · KINETRA Pondus`;
+  document.title = `${ROUTES[name].title} · KINETRA Pesatura`;
   cleanup = ROUTES[name].render(view);
 }
 

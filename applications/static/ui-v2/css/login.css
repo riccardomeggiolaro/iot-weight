@@ -1,7 +1,7 @@
 /* Pagina di accesso */
 .login { min-height: 100vh; display: grid; place-items: center; padding: 16px; background: var(--bg); }
 .login-card { width: 100%; max-width: 380px; padding: 28px 24px; display: flex; flex-direction: column; gap: 14px; }
-/* Logo del prodotto: pittogramma + KINETRA / — PONDUS (come nel marchio aziendale) */
+/* Logo del prodotto: pittogramma + KINETRA / — PESATURA (come nel marchio aziendale) */
 .product-logo { display: flex; align-items: center; gap: 14px; margin-bottom: 4px; }
 .product-logo img { width: 56px; height: 56px; border-radius: 14px; }
 .product-name { line-height: 1; color: #0f1e3d; }
