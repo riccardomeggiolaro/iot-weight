@@ -12,7 +12,7 @@ import { renderPrenotazioni, renderPesate } from './views/prenotazioni.js';
 if (!getToken()) logout();
 
 const ROUTES = {
-  pesa:         { title: 'Pesa',         render: renderPesa },
+  dashboard:    { title: 'Dashboard',    render: renderPesa },
   prenotazioni: { title: 'Prenotazioni', render: renderPrenotazioni },
   pesate:       { title: 'Pesate',       render: renderPesate },
   anagrafiche:  { title: 'Anagrafiche',  render: renderAnagrafiche },
@@ -27,7 +27,8 @@ let cleanup = null;
 
 function currentRoute() {
   const name = location.hash.replace(/^#\/?/, '').split('/')[0];
-  return ROUTES[name] ? name : 'pesa';
+  if (name === 'pesa') return 'dashboard'; // vecchio indirizzo della schermata
+  return ROUTES[name] ? name : 'dashboard';
 }
 
 function navigate() {
