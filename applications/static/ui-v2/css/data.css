@@ -221,3 +221,12 @@ textarea.input { resize: vertical; font: inherit; }
 }
 .form-grid > .check { align-self: end; min-height: 42px; }
 .form-grid > .check.wide { grid-column: 1 / -1; }
+
+/* Report designer dentro l'app */
+.main:has(.designer-page) { padding: 0; overflow: hidden; }
+.designer-page { display: flex; flex-direction: column; height: calc(100vh - var(--topbar-h)); }
+.designer-h { display: flex; align-items: center; gap: 14px; padding: 10px 16px 0; flex-wrap: wrap; background: var(--bg); }
+.designer-h h2 { font-size: 17px; margin-right: auto; }
+.designer-tabs { border-bottom: 0; width: 100%; }
+.designer-frame { flex: 1; width: 100%; border: 0; border-top: 1px solid var(--border); background: var(--bg); }
+@media (max-width: 720px) { .designer-page { height: calc(100vh - var(--topbar-h) - 64px); } }

@@ -9,6 +9,7 @@ import { renderPlaceholder } from './views/placeholder.js';
 import { renderAnagrafiche } from './views/anagrafiche.js';
 import { renderPrenotazioni, renderPesate } from './views/prenotazioni.js';
 import { renderImpostazioni } from './views/impostazioni.js';
+import { renderDesigner } from './views/designer.js';
 
 if (!getToken()) logout();
 
@@ -20,6 +21,7 @@ const ROUTES = {
   impianto:     { title: 'Impianto',     render: renderImpianto },
   report:       { title: 'Report',       render: el => renderPlaceholder(el, '📊', 'Report', 'Statistiche, esportazioni e modelli di stampa.') },
   impostazioni: { title: 'Impostazioni', render: renderImpostazioni },
+  designer:     { title: 'Report designer', render: renderDesigner, nav: 'impostazioni' },
 };
 
 const view = document.getElementById('view');
@@ -38,7 +40,7 @@ function navigate() {
   cleanup = null;
   view.innerHTML = '';
   document.querySelectorAll('.nav-item').forEach(a => {
-    if (a.dataset.route === name) a.setAttribute('aria-current', 'page');
+    if (a.dataset.route === (ROUTES[name].nav || name)) a.setAttribute('aria-current', 'page');
     else a.removeAttribute('aria-current');
   });
   title.textContent = ROUTES[name].title;

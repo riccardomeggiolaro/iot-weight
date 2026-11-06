@@ -6,8 +6,8 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Report Designer - {{ type }}</title>
-    <link rel="icon" href="/static/content/baronpesi_favicon.png">
+    <title>Report designer · {{ type }} · KINETRA Pesatura</title>
+    <link rel="icon" type="image/svg+xml" href="/img/logo.svg">
     <style>
         * {
             margin: 0;
@@ -630,22 +630,38 @@
             to { opacity: 0; }
         }
     </style>
+    <link rel="stylesheet" href="/static/css/report-designer-theme.css">
+    <script>
+        // Tema dell'app (chiaro/scuro) e modalità "dentro l'app" (iframe)
+        (function () {
+            const root = document.documentElement;
+            const apply = () => {
+                try {
+                    const t = localStorage.getItem('ui-v2.theme');
+                    if (t) root.dataset.theme = t; else delete root.dataset.theme;
+                } catch (_) {}
+            };
+            apply();
+            window.addEventListener('storage', e => { if (e.key === 'ui-v2.theme') apply(); });
+            if (window.self !== window.top) root.classList.add('embedded');
+        })();
+    </script>
 </head>
 <body onclick="selectElement()">
     <div class="container">
         <div class="header">
-            <h1>📄 Report Designer - {{ type }}</h1>
+            <h1>Report designer · {{ type }}</h1>
             <div class="toolbar">
                 <button class="btn btn-primary" onclick="loadDefaultTemplate('{{ default_report_template }}')">Ripristina ultimo salvato</button>
                 <select id="defaultReportSelect" onfocus="populateTemplates('{{ type_default_report }}')" onchange="loadDefaultTemplate(this.value)">
-                    <option>--Template di default--</option>
+                    <option>Modelli predefiniti…</option>
                 </select>
-                <button class="btn btn-primary" onclick="previewReport()">👁️ Anteprima</button>
-                <button class="btn btn-primary" onclick="showCode()" style="display: none;">📝 Mostra Codice</button>
-                <button class="btn btn-primary" onclick="saveProject('{{ report }}')">💾 Salva</button>
-                <button class="btn btn-primary" onclick="openBackupModal('{{ report }}')">🗂️ Backup</button>
-                <button class="btn btn-primary" onclick="downloadProjectLocal()">📥 Download</button>
-                <button class="btn btn-primary" onclick="importProject()">📥 Importa</button>
+                <button class="btn btn-primary" onclick="previewReport()">Anteprima</button>
+                <button class="btn btn-primary" onclick="showCode()" style="display: none;">Mostra codice</button>
+                <button class="btn btn-primary btn-accent" onclick="saveProject('{{ report }}')">Salva</button>
+                <button class="btn btn-primary" onclick="openBackupModal('{{ report }}')">Backup</button>
+                <button class="btn btn-primary" onclick="downloadProjectLocal()">Scarica</button>
+                <button class="btn btn-primary" onclick="importProject()">Importa</button>
             </div>
         </div>
 
