@@ -102,7 +102,6 @@ textarea.input { resize: vertical; font: inherit; }
 
 /* Righe */
 .dt-row.row-muted td { color: var(--text-muted); }
-.elapsed { font-variant-numeric: tabular-nums; }
 
 /* Dettaglio riga */
 .detail-kv { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin-bottom: 10px; font-size: 14px; }
