@@ -1,7 +1,8 @@
 from libs.lb_utils import CustomBaseModel
 from typing import Optional
 from pydantic import root_validator, validator, BaseModel
-from modules.md_database.interfaces.subject import SubjectDTO
+from modules.md_database.interfaces.customer import CustomerDTO
+from modules.md_database.interfaces.supplier import SupplierDTO
 from modules.md_database.interfaces.vector import VectorDTO
 from modules.md_database.interfaces.driver import DriverDTO
 from modules.md_database.interfaces.vehicle import VehicleDTO
@@ -40,8 +41,8 @@ class PathDTO(BaseModel):
 		return v
 
 class DataToStoreDTO(CustomBaseModel):
-	typeSubject: Optional[str] = "CUSTOMER"
-	subject: Optional[SubjectDTO] = SubjectDTO(**{})
+	customer: Optional[CustomerDTO] = CustomerDTO(**{})
+	supplier: Optional[SupplierDTO] = SupplierDTO(**{})
 	vector: Optional[VectorDTO] = VectorDTO(**{})
 	driver: Optional[DriverDTO] = DriverDTO(**{})
 	vehicle: Optional[VehicleDTO] = VehicleDTO(**{})
@@ -50,15 +51,9 @@ class DataToStoreDTO(CustomBaseModel):
 	note: Optional[str] = None
 	document_reference: Optional[str] = None
 
-	@validator('typeSubject', pre=True, always=True)
-	def check_type_social_reason(cls, v, values):
-		if v is not None and v not in ["CUSTOMER", "SUPPLIER"]:
-			raise ValueError("typeSocialReason può essere solo 'CLIENTE' o 'FORNITORE'")
-		return v
-
 class DataInExecutionDTO(CustomBaseModel):
-	typeSubject: Optional[str] = None
-	subject: Optional[SubjectDTO] = SubjectDTO(**{})
+	customer: Optional[CustomerDTO] = CustomerDTO(**{})
+	supplier: Optional[SupplierDTO] = SupplierDTO(**{})
 	vector: Optional[VectorDTO] = VectorDTO(**{})
 	driver: Optional[DriverDTO] = DriverDTO(**{})
 	vehicle: Optional[VehicleDTO] = VehicleDTO(**{})
@@ -76,12 +71,6 @@ class DataInExecutionDTO(CustomBaseModel):
 			raise ValueError("Solo uno dei seguenti attributi deve essere presente: customer, supplier, vehicle, material, note.")
 
 		return values
-
-	@validator('typeSubject', pre=True, always=True)
-	def check_type_social_reason(cls, v, values):
-		if v is not None and v not in ["CUSTOMER", "SUPPLIER"]:
-			raise ValueError("typeSocialReason può essere solo 'CLIENTE' o 'FORNITORE'")
-		return v
 
 class IdSelectedDTO(CustomBaseModel):
 	id: Optional[int] = None

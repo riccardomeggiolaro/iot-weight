@@ -32,6 +32,7 @@ import modules.md_updating.md_updating as md_updating
 from applications.router.anagrafic.manager_anagrafics import manager_anagrafics
 import asyncio
 from applications.utils.utils_backup import backup_database
+from applications.utils.utils_report import migrate_report_templates
 # ==============================================================
 
 name_app = "app_api"
@@ -137,6 +138,14 @@ def init():
 	if not path_images.startswith("/"):
 		path_images = f"{base_path}/{path_images}"
 	templates = Jinja2Templates(directory=str(path_ui))
+
+	# Modelli di stampa installati: le variabili del soggetto unico diventano cliente/fornitore
+	try:
+		migrated = migrate_report_templates(path_content / "report")
+		if migrated:
+			lb_log.info(f"Modelli di stampa aggiornati a cliente/fornitore: {migrated}")
+	except Exception as e:
+		lb_log.error(f"Migrazione modelli di stampa non riuscita: {e}")
 
 	app.add_middleware(
 		CORSMiddleware, 
@@ -368,11 +377,8 @@ def init():
 			return PlainTextResponse(content or "Nessun errore di pesatura registrato.")
 		return PlainTextResponse("Nessun errore di pesatura registrato.")
 
-	# Pagine del totem (la navigazione tra le schermate usa indirizzi relativi, es. "totem-plate.html")
-	TOTEM_PAGES = [
-		"dashboard-totem", "totem-customer", "totem-driver", "totem-material", "totem-plate",
-		"totem-subject", "totem-summary", "totem-supplier", "totem-type", "totem-vector",
-	]
+	# Pagine del totem raggiunte con indirizzi relativi (es. "dashboard-totem.html" dal totem)
+	TOTEM_PAGES = ["dashboard-totem"]
 
 	def _add_totem_page(page: str):
 		async def TotemPage(request: Request):

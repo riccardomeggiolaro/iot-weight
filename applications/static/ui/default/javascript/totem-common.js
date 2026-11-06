@@ -7,8 +7,8 @@ let lastSlashIndex = window.location.pathname.lastIndexOf('/');
 pathname = lastSlashIndex !== -1 ? pathname.substring(0, lastSlashIndex) : pathname;
 
 let selectedVehicle = { id: null, plate: '' };
-let selectedTypeSubject = 'CUSTOMER';
-let selectedSubject = { id: null, social_reason: '' };
+let selectedCustomer = { id: null, social_reason: '' };
+let selectedSupplier = { id: null, social_reason: '' };
 let selectedVector = { id: null, social_reason: '' };
 let selectedDriver = { id: null, social_reason: '' };
 let selectedMaterial = { id: null, description: '' };
@@ -16,7 +16,8 @@ let selectedMaterial = { id: null, description: '' };
 let dataInExecution = null;
 let selectedIdWeight = null;
 let _reservationHasMaterial = false;
-let _reservationHasSubject = false;
+let _reservationHasCustomer = false;
+let _reservationHasSupplier = false;
 let _reservationHasVector = false;
 let _reservationHasDriver = false;
 let weighers_data_type = "MANUALLY";
@@ -34,8 +35,7 @@ let data_weight_realtime = {
 let return_pdf_copy_after_weighing = false;
 let test_mode = false;
 let instances = {};
-let totemAnagrafiche = { vehicle: true, subject: false, vector: false, driver: false, material: true };
-let defaultTypeSubject = "CUSTOMER";
+let totemAnagrafiche = { vehicle: true, customer: false, supplier: false, vector: false, driver: false, material: true };
 let access_id = null;
 let confirmWeighing = null;
 let _weighingCompleting = false;
@@ -71,8 +71,7 @@ function initTotemPage() {
         return_pdf_copy_after_weighing = res["return_pdf_copy_after_weighing"];
         test_mode = res["test_mode"] || false;
         instances = res["weighers"];
-        totemAnagrafiche = res["totem_anagrafiche"] || { card: true, vehicle: true, subject: false, vector: false, driver: false, material: true };
-        defaultTypeSubject = res["default_type_subject"] || "CUSTOMER";
+        totemAnagrafiche = res["totem_anagrafiche"] || { card: true, vehicle: true, customer: false, supplier: false, vector: false, driver: false, material: true };
         weigherMode = res["mode"] || "MANUALLY";
 
         connectWebSocket(`api/command-weigher/realtime${currentWeigherPath}`, updateUIRealtime);
@@ -93,7 +92,8 @@ function _resolveStartPage() {
 
     // Find the first enabled step that doesn't have data yet
     const steps = [
-        { name: 'subject', enabled: totemAnagrafiche.subject, hasData: () => !!selectedSubject.id },
+        { name: 'customer', enabled: totemAnagrafiche.customer, hasData: () => !!selectedCustomer.id },
+        { name: 'supplier', enabled: totemAnagrafiche.supplier, hasData: () => !!selectedSupplier.id },
         { name: 'vector', enabled: totemAnagrafiche.vector, hasData: () => !!selectedVector.id },
         { name: 'driver', enabled: totemAnagrafiche.driver, hasData: () => !!selectedDriver.id },
         { name: 'material', enabled: totemAnagrafiche.material, hasData: () => !!selectedMaterial.id },
@@ -116,17 +116,14 @@ let _waitingForStartPage = false;
 function _findNextEnabledStep(afterStep, ignoreMode = false) {
     if (!ignoreMode && weigherMode === "AUTOMATIC") return null;
     const steps = [
-        { name: 'subject', enabled: totemAnagrafiche.subject, hasData: () => !!selectedSubject.id },
+        { name: 'customer', enabled: totemAnagrafiche.customer, hasData: () => !!selectedCustomer.id },
+        { name: 'supplier', enabled: totemAnagrafiche.supplier, hasData: () => !!selectedSupplier.id },
         { name: 'vector', enabled: totemAnagrafiche.vector, hasData: () => !!selectedVector.id },
         { name: 'driver', enabled: totemAnagrafiche.driver, hasData: () => !!selectedDriver.id },
         { name: 'material', enabled: totemAnagrafiche.material, hasData: () => !!selectedMaterial.id },
     ];
-    let startIndex = 0;
-    if (afterStep === 'plate') startIndex = 0;
-    else if (afterStep === 'subject') startIndex = 1;
-    else if (afterStep === 'vector') startIndex = 2;
-    else if (afterStep === 'driver') startIndex = 3;
-    else if (afterStep === 'material') return null;
+    if (afterStep === 'material') return null;
+    const startIndex = afterStep === 'plate' ? 0 : steps.findIndex(s => s.name === afterStep) + 1;
 
     for (let i = startIndex; i < steps.length; i++) {
         if (steps[i].enabled && !steps[i].hasData()) return steps[i].name;
@@ -139,7 +136,8 @@ function _findPrevEnabledStep(beforeStep) {
     const steps = [
         { name: 'card', enabled: totemAnagrafiche.card !== false },
         { name: 'plate', enabled: totemAnagrafiche.vehicle },
-        { name: 'subject', enabled: totemAnagrafiche.subject },
+        { name: 'customer', enabled: totemAnagrafiche.customer },
+        { name: 'supplier', enabled: totemAnagrafiche.supplier },
         { name: 'vector', enabled: totemAnagrafiche.vector },
         { name: 'driver', enabled: totemAnagrafiche.driver },
         { name: 'material', enabled: totemAnagrafiche.material },
@@ -396,7 +394,7 @@ async function loadItems(anagrafic, filterField, inputValue, containerId, onItem
             let secondaryText = '';
 
             if (anagrafic === 'vehicle' && item.description) secondaryText = item.description;
-            else if (anagrafic === 'subject' && item.cfpiva) secondaryText = item.cfpiva;
+            else if ((anagrafic === 'customer' || anagrafic === 'supplier') && item.cfpiva) secondaryText = item.cfpiva;
             else if (anagrafic === 'vector' && item.cfpiva) secondaryText = item.cfpiva;
             else if (anagrafic === 'driver' && item.telephone) secondaryText = item.telephone;
 
@@ -509,8 +507,8 @@ function cancelTotem() {
     .then(res => res.json())
     .then(() => {
         selectedVehicle = { id: null, plate: '' };
-        selectedTypeSubject = defaultTypeSubject;
-        selectedSubject = { id: null, social_reason: '' };
+        selectedCustomer = { id: null, social_reason: '' };
+        selectedSupplier = { id: null, social_reason: '' };
         selectedVector = { id: null, social_reason: '' };
         selectedDriver = { id: null, social_reason: '' };
         selectedMaterial = { id: null, description: '' };
@@ -540,7 +538,8 @@ function selectAndAdvance(anagrafic, item, nextPage) {
             // Update local state from response
             if (res.data_in_execution) {
                 const d = res.data_in_execution;
-                if (d.subject) selectedSubject = { id: d.subject.id, social_reason: d.subject.social_reason || '' };
+                if (d.customer) selectedCustomer = { id: d.customer.id, social_reason: d.customer.social_reason || '' };
+                if (d.supplier) selectedSupplier = { id: d.supplier.id, social_reason: d.supplier.social_reason || '' };
                 if (d.vector) selectedVector = { id: d.vector.id, social_reason: d.vector.social_reason || '' };
                 if (d.driver) selectedDriver = { id: d.driver?.id || null, social_reason: d.driver?.social_reason || '' };
                 if (d.material) selectedMaterial = { id: d.material.id, description: d.material.description || '' };
@@ -602,7 +601,8 @@ function createOrSelectAnagrafic(anagrafic, filterField, value) {
 function getCurrentId(anagrafic) {
     switch (anagrafic) {
         case 'vehicle': return selectedVehicle.id;
-        case 'subject': return selectedSubject.id;
+        case 'customer': return selectedCustomer.id;
+        case 'supplier': return selectedSupplier.id;
         case 'vector': return selectedVector.id;
         case 'driver': return selectedDriver.id;
         case 'material': return selectedMaterial.id;
@@ -620,7 +620,7 @@ function highlightText(text, input) {
 }
 
 function getAnagraficLabel(anagrafic) {
-    const labels = { vehicle: t('label_vehicle'), subject: t('label_subject'), vector: t('label_vector'), driver: t('label_driver'), material: t('label_material') };
+    const labels = { vehicle: t('label_vehicle'), customer: t('label_customer'), supplier: t('label_supplier'), vector: t('label_vector'), driver: t('label_driver'), material: t('label_material') };
     return labels[anagrafic] || anagrafic;
 }
 
@@ -861,15 +861,16 @@ async function getData(path) {
         dataInExecution = res["data_in_execution"];
         selectedIdWeight = res["id_selected"];
         _reservationHasMaterial = res.reservation_has_material || false;
-        _reservationHasSubject = res.reservation_has_subject || false;
+        _reservationHasCustomer = res.reservation_has_customer || false;
+        _reservationHasSupplier = res.reservation_has_supplier || false;
         _reservationHasVector = res.reservation_has_vector || false;
         _reservationHasDriver = res.reservation_has_driver || false;
         weighers_data_type = res.type || "MANUALLY";
         const obj = res["data_in_execution"];
 
         selectedVehicle = { id: obj.vehicle.id, plate: obj.vehicle.plate || '' };
-        selectedTypeSubject = obj.typeSubject || defaultTypeSubject;
-        selectedSubject = { id: obj.subject.id, social_reason: obj.subject.social_reason || '' };
+        selectedCustomer = { id: obj.customer?.id || null, social_reason: obj.customer?.social_reason || '' };
+        selectedSupplier = { id: obj.supplier?.id || null, social_reason: obj.supplier?.social_reason || '' };
         selectedVector = { id: obj.vector.id, social_reason: obj.vector.social_reason || '' };
         selectedDriver = { id: obj.driver?.id || null, social_reason: obj.driver?.social_reason || '' };
         selectedMaterial = { id: obj.material.id, description: obj.material.description || '' };
@@ -940,7 +941,8 @@ function processRealtimeObject(obj) {
     } else if (obj.data_in_execution) {
         const prevId = selectedIdWeight ? selectedIdWeight.id : null;
         _reservationHasMaterial = obj.reservation_has_material || false;
-        _reservationHasSubject = obj.reservation_has_subject || false;
+        _reservationHasCustomer = obj.reservation_has_customer || false;
+        _reservationHasSupplier = obj.reservation_has_supplier || false;
         _reservationHasVector = obj.reservation_has_vector || false;
         _reservationHasDriver = obj.reservation_has_driver || false;
         weighers_data_type = obj.type || "MANUALLY";
@@ -949,10 +951,8 @@ function processRealtimeObject(obj) {
         const d = obj.data_in_execution;
 
         selectedVehicle = { id: d.vehicle.id, plate: d.vehicle.plate || '' };
-        if (d.typeSubject === 'Cliente') selectedTypeSubject = 'CUSTOMER';
-        else if (d.typeSubject === 'Fornitore') selectedTypeSubject = 'SUPPLIER';
-        else selectedTypeSubject = d.typeSubject || defaultTypeSubject;
-        selectedSubject = { id: d.subject.id, social_reason: d.subject.social_reason || '' };
+        selectedCustomer = { id: d.customer?.id || null, social_reason: d.customer?.social_reason || '' };
+        selectedSupplier = { id: d.supplier?.id || null, social_reason: d.supplier?.social_reason || '' };
         selectedVector = { id: d.vector.id, social_reason: d.vector.social_reason || '' };
         selectedDriver = { id: d.driver?.id || null, social_reason: d.driver?.social_reason || '' };
         selectedMaterial = { id: d.material.id, description: d.material.description || '' };

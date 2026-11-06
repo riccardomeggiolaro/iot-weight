@@ -1,5 +1,5 @@
 from sqlalchemy.orm import selectinload
-from modules.md_database.md_database import SessionLocal, InOut, Access, Weighing, Subject, Vector, Driver
+from modules.md_database.md_database import SessionLocal, InOut, Access, Weighing, Customer, Supplier, Vector, Driver
 
 def get_in_out_by_id(id):
     """
@@ -12,11 +12,13 @@ def get_in_out_by_id(id):
                     selectinload(InOut.access).options(
                         selectinload(Access.vehicle),
                         selectinload(Access.driver),
-                        selectinload(Access.subject),
+                        selectinload(Access.customer),
+                        selectinload(Access.supplier),
                         selectinload(Access.vector),
                         selectinload(Access.material)
                     ),
-                    selectinload(InOut.subject),
+                    selectinload(InOut.customer),
+                    selectinload(InOut.supplier),
                     selectinload(InOut.vector),
                     selectinload(InOut.driver),
                     selectinload(InOut.weight1).options(

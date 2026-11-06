@@ -1,5 +1,6 @@
 from pydantic import BaseModel
-from modules.md_database.interfaces.subject import SubjectDTO
+from modules.md_database.interfaces.customer import CustomerDTO
+from modules.md_database.interfaces.supplier import SupplierDTO
 from modules.md_database.interfaces.vector import VectorDTO
 from modules.md_database.interfaces.driver import DriverDTO
 from modules.md_database.interfaces.vehicle import VehicleDTO
@@ -19,8 +20,8 @@ class DataAssignedDTO(BaseModel):
     identify_code: Optional[str] = None
 
 class DataInExecution(BaseModel):
-	typeSubject: Optional[str] = None
-	subject: SubjectDTO = SubjectDTO(**{})
+	customer: CustomerDTO = CustomerDTO(**{})
+	supplier: SupplierDTO = SupplierDTO(**{})
 	vector: VectorDTO = VectorDTO(**{})
 	driver: DriverDTO = DriverDTO(**{})
 	vehicle: VehicleDTO = VehicleDTO(**{})
@@ -28,11 +29,6 @@ class DataInExecution(BaseModel):
 	operator: OperatorDTO = OperatorDTO(**{})
 	note: Optional[str] = None
 	document_reference: Optional[str] = None
-
-	def __init__(self, **data):
-		if "typeSubject" not in data or data["typeSubject"] is None:
-			data["typeSubject"] = lb_config.g_config["app_api"].get("default_type_subject", "CUSTOMER")
-		super().__init__(**data)
 
 class IdSelected(BaseModel):
 	id: Optional[int] = None
@@ -48,7 +44,8 @@ class Data(BaseModel):
 	type: Optional[str] = TypeAccess.MANUALLY.name
 	reservation_has_vehicle: Optional[bool] = False
 	reservation_has_material: Optional[bool] = False
-	reservation_has_subject: Optional[bool] = False
+	reservation_has_customer: Optional[bool] = False
+	reservation_has_supplier: Optional[bool] = False
 	reservation_has_vector: Optional[bool] = False
 	reservation_has_driver: Optional[bool] = False
 	reservation_has_note: Optional[bool] = False

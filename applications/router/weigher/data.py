@@ -11,7 +11,7 @@ from modules.md_database.functions.get_data_by_attributes import get_data_by_att
 from modules.md_database.functions.update_access import update_access
 from modules.md_database.functions.update_data import update_data
 from modules.md_database.interfaces.access import SetAccessDTO
-from modules.md_database.md_database import AccessStatus, TypeAccess, TypeSubjectEnum
+from modules.md_database.md_database import AccessStatus, TypeAccess
 import libs.lb_config as lb_config
 import json
 import modules.md_weigher.md_weigher as md_weigher
@@ -43,10 +43,14 @@ class DataRouter(CallbackWeigher):
 				vehicle = get_data_by_attributes("vehicle", {"plate": data_dto.data_in_execution.vehicle.plate.upper()})
 				if vehicle:
 					data_dto.data_in_execution.vehicle.id = vehicle["id"]
-			if data_dto.data_in_execution.subject.social_reason and not data_dto.data_in_execution.subject.id:
-				subject = get_data_by_attributes("subject", {"social_reason": data_dto.data_in_execution.subject.social_reason})
-				if subject:
-					data_dto.data_in_execution.subject.id = subject["id"]
+			if data_dto.data_in_execution.customer.social_reason and not data_dto.data_in_execution.customer.id:
+				customer = get_data_by_attributes("customer", {"social_reason": data_dto.data_in_execution.customer.social_reason})
+				if customer:
+					data_dto.data_in_execution.customer.id = customer["id"]
+			if data_dto.data_in_execution.supplier.social_reason and not data_dto.data_in_execution.supplier.id:
+				supplier = get_data_by_attributes("supplier", {"social_reason": data_dto.data_in_execution.supplier.social_reason})
+				if supplier:
+					data_dto.data_in_execution.supplier.id = supplier["id"]
 			if data_dto.data_in_execution.vector.social_reason and not data_dto.data_in_execution.vector.id:
 				vector = get_data_by_attributes("vector", {"social_reason": data_dto.data_in_execution.vector.social_reason})
 				if vector:
@@ -60,7 +64,9 @@ class DataRouter(CallbackWeigher):
 				continues = True
 				if data_dto.data_in_execution.vehicle.plate and not data_dto.data_in_execution.vehicle.id:
 					continues = False
-				if data_dto.data_in_execution.subject.social_reason and not data_dto.data_in_execution.subject.id:
+				if data_dto.data_in_execution.customer.social_reason and not data_dto.data_in_execution.customer.id:
+					continues = False
+				if data_dto.data_in_execution.supplier.social_reason and not data_dto.data_in_execution.supplier.id:
 					continues = False
 				if data_dto.data_in_execution.vector.social_reason and not data_dto.data_in_execution.vector.id:
 					continues = False
@@ -77,10 +83,10 @@ class DataRouter(CallbackWeigher):
 		# In_out-level data (priority over access)
 		io_data = {
 			"material": {"id": None, "description": None},
-			"subject": {"id": None, "social_reason": None, "telephone": None, "cfpiva": None},
+			"customer": {"id": None, "social_reason": None, "telephone": None, "cfpiva": None},
+			"supplier": {"id": None, "social_reason": None, "telephone": None, "cfpiva": None},
 			"vector": {"id": None, "social_reason": None, "telephone": None, "cfpiva": None},
 			"driver": {"id": None, "social_reason": None, "telephone": None},
-			"typeSubject": lb_config.g_config["app_api"].get("default_type_subject", "CUSTOMER"),
 			"note": None,
 			"document_reference": None,
 		}
@@ -102,28 +108,28 @@ class DataRouter(CallbackWeigher):
 					lio = access.in_out[-1]
 					if lio.idMaterial and lio.material:
 						io_data["material"] = {"id": lio.material.id, "description": lio.material.description}
-					if lio.idSubject and lio.subject:
-						io_data["subject"] = {"id": lio.subject.id, "social_reason": lio.subject.social_reason, "telephone": lio.subject.telephone, "cfpiva": lio.subject.cfpiva}
+					if lio.idCustomer and lio.customer:
+						io_data["customer"] = {"id": lio.customer.id, "social_reason": lio.customer.social_reason, "telephone": lio.customer.telephone, "cfpiva": lio.customer.cfpiva}
+					if lio.idSupplier and lio.supplier:
+						io_data["supplier"] = {"id": lio.supplier.id, "social_reason": lio.supplier.social_reason, "telephone": lio.supplier.telephone, "cfpiva": lio.supplier.cfpiva}
 					if lio.idVector and lio.vector:
 						io_data["vector"] = {"id": lio.vector.id, "social_reason": lio.vector.social_reason, "telephone": lio.vector.telephone, "cfpiva": lio.vector.cfpiva}
 					if lio.idDriver and lio.driver:
 						io_data["driver"] = {"id": lio.driver.id, "social_reason": lio.driver.social_reason, "telephone": lio.driver.telephone}
-					if lio.typeSubject:
-						io_data["typeSubject"] = lio.typeSubject.name if hasattr(lio.typeSubject, 'name') else lio.typeSubject
 					io_data["note"] = lio.note
 					io_data["document_reference"] = lio.document_reference
 			if not last_in_out_open:
 				# No in_out or last in_out is closed — use access/reservation data
 				if access.idMaterial and access.material:
 					io_data["material"] = {"id": access.material.id, "description": access.material.description}
-				if access.idSubject and access.subject:
-					io_data["subject"] = {"id": access.subject.id, "social_reason": access.subject.social_reason, "telephone": access.subject.telephone, "cfpiva": access.subject.cfpiva}
+				if access.idCustomer and access.customer:
+					io_data["customer"] = {"id": access.customer.id, "social_reason": access.customer.social_reason, "telephone": access.customer.telephone, "cfpiva": access.customer.cfpiva}
+				if access.idSupplier and access.supplier:
+					io_data["supplier"] = {"id": access.supplier.id, "social_reason": access.supplier.social_reason, "telephone": access.supplier.telephone, "cfpiva": access.supplier.cfpiva}
 				if access.idVector and access.vector:
 					io_data["vector"] = {"id": access.vector.id, "social_reason": access.vector.social_reason, "telephone": access.vector.telephone, "cfpiva": access.vector.cfpiva}
 				if access.idDriver and access.driver:
 					io_data["driver"] = {"id": access.driver.id, "social_reason": access.driver.social_reason, "telephone": access.driver.telephone}
-				if access.typeSubject:
-					io_data["typeSubject"] = access.typeSubject.name if hasattr(access.typeSubject, 'name') else access.typeSubject
 				io_data["note"] = access.note
 				io_data["document_reference"] = access.document_reference
 		if tare != "0" and data_dto.id_selected.id not in [-1, None] and weight1:
@@ -181,8 +187,10 @@ class DataRouter(CallbackWeigher):
 					lio = access_for_weight.in_out[-1]
 					if lio.idMaterial and lio.material:
 						io_data["material"] = {"id": lio.material.id, "description": lio.material.description}
-					if lio.idSubject and lio.subject:
-						io_data["subject"] = {"id": lio.subject.id, "social_reason": lio.subject.social_reason, "telephone": lio.subject.telephone, "cfpiva": lio.subject.cfpiva}
+					if lio.idCustomer and lio.customer:
+						io_data["customer"] = {"id": lio.customer.id, "social_reason": lio.customer.social_reason, "telephone": lio.customer.telephone, "cfpiva": lio.customer.cfpiva}
+					if lio.idSupplier and lio.supplier:
+						io_data["supplier"] = {"id": lio.supplier.id, "social_reason": lio.supplier.social_reason, "telephone": lio.supplier.telephone, "cfpiva": lio.supplier.cfpiva}
 					if lio.idVector and lio.vector:
 						io_data["vector"] = {"id": lio.vector.id, "social_reason": lio.vector.social_reason, "telephone": lio.vector.telephone, "cfpiva": lio.vector.cfpiva}
 					if lio.idDriver and lio.driver:
@@ -190,8 +198,10 @@ class DataRouter(CallbackWeigher):
 			elif access_for_weight:
 				if access_for_weight.idMaterial and access_for_weight.material:
 					io_data["material"] = {"id": access_for_weight.material.id, "description": access_for_weight.material.description}
-				if access_for_weight.idSubject and access_for_weight.subject:
-					io_data["subject"] = {"id": access_for_weight.subject.id, "social_reason": access_for_weight.subject.social_reason, "telephone": access_for_weight.subject.telephone, "cfpiva": access_for_weight.subject.cfpiva}
+				if access_for_weight.idCustomer and access_for_weight.customer:
+					io_data["customer"] = {"id": access_for_weight.customer.id, "social_reason": access_for_weight.customer.social_reason, "telephone": access_for_weight.customer.telephone, "cfpiva": access_for_weight.customer.cfpiva}
+				if access_for_weight.idSupplier and access_for_weight.supplier:
+					io_data["supplier"] = {"id": access_for_weight.supplier.id, "social_reason": access_for_weight.supplier.social_reason, "telephone": access_for_weight.supplier.telephone, "cfpiva": access_for_weight.supplier.cfpiva}
 				if access_for_weight.idVector and access_for_weight.vector:
 					io_data["vector"] = {"id": access_for_weight.vector.id, "social_reason": access_for_weight.vector.social_reason, "telephone": access_for_weight.vector.telephone, "cfpiva": access_for_weight.vector.cfpiva}
 				if access_for_weight.idDriver and access_for_weight.driver:
@@ -202,11 +212,12 @@ class DataRouter(CallbackWeigher):
 				# Non-manual access: update data_in_execution in memory
 				access = get_access_by_id(id_selected)
 				die = weighers_data[instance.instance_name][instance.weigher_name]["data"]["data_in_execution"]
-				if data_dto.data_in_execution.typeSubject:
-					die["typeSubject"] = data_dto.data_in_execution.typeSubject
-				if data_dto.data_in_execution.subject.id or data_dto.data_in_execution.subject.social_reason:
-					die["subject"]["id"] = data_dto.data_in_execution.subject.id
-					die["subject"]["social_reason"] = data_dto.data_in_execution.subject.social_reason
+				if data_dto.data_in_execution.customer.id or data_dto.data_in_execution.customer.social_reason:
+					die["customer"]["id"] = data_dto.data_in_execution.customer.id
+					die["customer"]["social_reason"] = data_dto.data_in_execution.customer.social_reason
+				if data_dto.data_in_execution.supplier.id or data_dto.data_in_execution.supplier.social_reason:
+					die["supplier"]["id"] = data_dto.data_in_execution.supplier.id
+					die["supplier"]["social_reason"] = data_dto.data_in_execution.supplier.social_reason
 				if data_dto.data_in_execution.vector.id or data_dto.data_in_execution.vector.social_reason:
 					die["vector"]["id"] = data_dto.data_in_execution.vector.id
 					die["vector"]["social_reason"] = data_dto.data_in_execution.vector.social_reason
@@ -251,7 +262,7 @@ class DataRouter(CallbackWeigher):
 				# working on the same access: if the request is switching to a different
 				# id_selected, io_data was already populated above from the newly selected
 				# access and must not be overwritten with the previous one's data (this was
-				# causing subject/vector/material to stick to the previously selected access).
+				# causing customer/supplier/vector/material to stick to the previously selected access).
 				updated_access = get_access_by_id(id_selected) if data_dto.id_selected.id == id_selected else None
 				if updated_access:
 					refreshed = False
@@ -259,19 +270,17 @@ class DataRouter(CallbackWeigher):
 						refreshed = True
 						lio = updated_access.in_out[-1]
 						io_data["material"] = {"id": lio.material.id, "description": lio.material.description} if lio.idMaterial and lio.material else {"id": None, "description": None}
-						io_data["subject"] = {"id": lio.subject.id, "social_reason": lio.subject.social_reason, "telephone": lio.subject.telephone, "cfpiva": lio.subject.cfpiva} if lio.idSubject and lio.subject else {"id": None, "social_reason": None, "telephone": None, "cfpiva": None}
+						io_data["customer"] = {"id": lio.customer.id, "social_reason": lio.customer.social_reason, "telephone": lio.customer.telephone, "cfpiva": lio.customer.cfpiva} if lio.idCustomer and lio.customer else {"id": None, "social_reason": None, "telephone": None, "cfpiva": None}
+						io_data["supplier"] = {"id": lio.supplier.id, "social_reason": lio.supplier.social_reason, "telephone": lio.supplier.telephone, "cfpiva": lio.supplier.cfpiva} if lio.idSupplier and lio.supplier else {"id": None, "social_reason": None, "telephone": None, "cfpiva": None}
 						io_data["vector"] = {"id": lio.vector.id, "social_reason": lio.vector.social_reason, "telephone": lio.vector.telephone, "cfpiva": lio.vector.cfpiva} if lio.idVector and lio.vector else {"id": None, "social_reason": None, "telephone": None, "cfpiva": None}
 						io_data["driver"] = {"id": lio.driver.id, "social_reason": lio.driver.social_reason, "telephone": lio.driver.telephone} if lio.idDriver and lio.driver else {"id": None, "social_reason": None, "telephone": None}
-						if lio.typeSubject:
-							io_data["typeSubject"] = lio.typeSubject.name if hasattr(lio.typeSubject, 'name') else lio.typeSubject
 						io_data_from_in_out = True
 					if not refreshed:
 						io_data["material"] = {"id": updated_access.material.id, "description": updated_access.material.description} if updated_access.idMaterial and updated_access.material else {"id": None, "description": None}
-						io_data["subject"] = {"id": updated_access.subject.id, "social_reason": updated_access.subject.social_reason, "telephone": updated_access.subject.telephone, "cfpiva": updated_access.subject.cfpiva} if updated_access.idSubject and updated_access.subject else {"id": None, "social_reason": None, "telephone": None, "cfpiva": None}
+						io_data["customer"] = {"id": updated_access.customer.id, "social_reason": updated_access.customer.social_reason, "telephone": updated_access.customer.telephone, "cfpiva": updated_access.customer.cfpiva} if updated_access.idCustomer and updated_access.customer else {"id": None, "social_reason": None, "telephone": None, "cfpiva": None}
+						io_data["supplier"] = {"id": updated_access.supplier.id, "social_reason": updated_access.supplier.social_reason, "telephone": updated_access.supplier.telephone, "cfpiva": updated_access.supplier.cfpiva} if updated_access.idSupplier and updated_access.supplier else {"id": None, "social_reason": None, "telephone": None, "cfpiva": None}
 						io_data["vector"] = {"id": updated_access.vector.id, "social_reason": updated_access.vector.social_reason, "telephone": updated_access.vector.telephone, "cfpiva": updated_access.vector.cfpiva} if updated_access.idVector and updated_access.vector else {"id": None, "social_reason": None, "telephone": None, "cfpiva": None}
 						io_data["driver"] = {"id": updated_access.driver.id, "social_reason": updated_access.driver.social_reason, "telephone": updated_access.driver.telephone} if updated_access.idDriver and updated_access.driver else {"id": None, "social_reason": None, "telephone": None}
-						if updated_access.typeSubject:
-							io_data["typeSubject"] = updated_access.typeSubject.name if hasattr(updated_access.typeSubject, 'name') else updated_access.typeSubject
 				data = json.dumps({"id": id_selected})
 				await self.broadcastUpdateAnagrafic("access", {"access": data})
 		if data_dto.id_selected.id:
@@ -279,12 +288,17 @@ class DataRouter(CallbackWeigher):
 			if data_dto.id_selected.id != -1:
 				access = get_access_by_id(data_dto.id_selected.id)
 				data_in_execution = DataInExecutionType(**{
-					"typeSubject": io_data["typeSubject"] or (access.typeSubject.name if access.typeSubject else lb_config.g_config["app_api"].get("default_type_subject", "CUSTOMER")),
-					"subject": io_data["subject"] if io_data["subject"]["id"] else {
-						"id": access.subject.id if access.subject else None,
-						"social_reason": access.subject.social_reason if access.subject else None,
-						"telephone": access.subject.telephone if access.subject else None,
-						"cfpiva": access.subject.cfpiva if access.subject else None
+					"customer": io_data["customer"] if io_data["customer"]["id"] else {
+						"id": access.customer.id if access.customer else None,
+						"social_reason": access.customer.social_reason if access.customer else None,
+						"telephone": access.customer.telephone if access.customer else None,
+						"cfpiva": access.customer.cfpiva if access.customer else None
+					},
+					"supplier": io_data["supplier"] if io_data["supplier"]["id"] else {
+						"id": access.supplier.id if access.supplier else None,
+						"social_reason": access.supplier.social_reason if access.supplier else None,
+						"telephone": access.supplier.telephone if access.supplier else None,
+						"cfpiva": access.supplier.cfpiva if access.supplier else None
 					},
 					"vector": io_data["vector"] if io_data["vector"]["id"] else {
 						"id": access.vector.id if access.vector else None,
@@ -316,7 +330,8 @@ class DataRouter(CallbackWeigher):
 				weighers_data[instance.instance_name][instance.weigher_name]["data"]["number_in_out"] = access.number_in_out
 				weighers_data[instance.instance_name][instance.weigher_name]["data"]["reservation_has_vehicle"] = data_in_execution.vehicle.id is not None
 				weighers_data[instance.instance_name][instance.weigher_name]["data"]["reservation_has_material"] = data_in_execution.material.id is not None
-				weighers_data[instance.instance_name][instance.weigher_name]["data"]["reservation_has_subject"] = data_in_execution.subject.id is not None
+				weighers_data[instance.instance_name][instance.weigher_name]["data"]["reservation_has_customer"] = data_in_execution.customer.id is not None
+				weighers_data[instance.instance_name][instance.weigher_name]["data"]["reservation_has_supplier"] = data_in_execution.supplier.id is not None
 				weighers_data[instance.instance_name][instance.weigher_name]["data"]["reservation_has_vector"] = data_in_execution.vector.id is not None
 				weighers_data[instance.instance_name][instance.weigher_name]["data"]["reservation_has_driver"] = data_in_execution.driver.id is not None
 				weighers_data[instance.instance_name][instance.weigher_name]["data"]["reservation_has_note"] = data_in_execution.note is not None and data_in_execution.note != ""

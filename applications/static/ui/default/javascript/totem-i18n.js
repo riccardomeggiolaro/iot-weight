@@ -5,7 +5,6 @@ const totemTranslations = {
         // Page titles
         plate_title: 'Targa',
         card_title: 'Tessera',
-        subject_title: 'Ragione Sociale',
         customer: 'Cliente',
         supplier: 'Fornitore',
         vector_title: 'Vettore',
@@ -42,7 +41,8 @@ const totemTranslations = {
 
         // Anagrafic labels
         label_vehicle: 'Veicolo',
-        label_subject: 'Soggetto',
+        label_customer: 'Cliente',
+        label_supplier: 'Fornitore',
         label_vector: 'Vettore',
         label_driver: 'Autista',
         label_material: 'Materiale',
@@ -54,7 +54,6 @@ const totemTranslations = {
         // Page titles
         plate_title: 'License Plate',
         card_title: 'Card',
-        subject_title: 'Company Name',
         customer: 'Customer',
         supplier: 'Supplier',
         vector_title: 'Carrier',
@@ -91,7 +90,8 @@ const totemTranslations = {
 
         // Anagrafic labels
         label_vehicle: 'Vehicle',
-        label_subject: 'Subject',
+        label_customer: 'Customer',
+        label_supplier: 'Supplier',
         label_vector: 'Carrier',
         label_driver: 'Driver',
         label_material: 'Material',

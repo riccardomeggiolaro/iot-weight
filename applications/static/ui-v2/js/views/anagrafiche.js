@@ -1,4 +1,4 @@
-// Anagrafiche: veicoli, clienti/fornitori, vettori, materiali, autisti, tessere.
+// Anagrafiche: veicoli, clienti, fornitori, vettori, materiali, autisti, tessere.
 // Una scheda per anagrafica (#/anagrafiche/<scheda>), con ricerca, ordinamento,
 // paginazione, inserimento, modifica ed eliminazione (con blocco del record),
 // import da file CSV/Excel e aggiornamento in tempo reale.
@@ -24,8 +24,18 @@ const ENTITIES = {
     ],
     upload: true,
   },
-  soggetti: {
-    name: 'subject', label: 'Clienti/Fornitori', one: 'cliente/fornitore', article: 'il', gender: 'o',
+  clienti: {
+    name: 'customer', label: 'Clienti', one: 'cliente', article: 'il', gender: 'o',
+    title: r => r.social_reason,
+    fields: [
+      { key: 'social_reason', label: 'Ragione sociale', required: true, filter: true },
+      { key: 'telephone', label: 'Telefono', type: 'tel', filter: true },
+      { key: 'cfpiva', label: 'CF / P.IVA', upper: true, filter: true },
+    ],
+    upload: true,
+  },
+  fornitori: {
+    name: 'supplier', label: 'Fornitori', one: 'fornitore', article: 'il', gender: 'o',
     title: r => r.social_reason,
     fields: [
       { key: 'social_reason', label: 'Ragione sociale', required: true, filter: true },

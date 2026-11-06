@@ -128,7 +128,8 @@ export function renderPesa(el) {
       return;
     }
     const rows = [
-      ['Cliente/Forn.', die.subject?.social_reason],
+      ['Cliente', die.customer?.social_reason],
+      ['Fornitore', die.supplier?.social_reason],
       ['Vettore', die.vector?.social_reason],
       ['Autista', die.driver?.social_reason || die.driver?.name],
       ['Materiale', die.material?.description],
@@ -358,9 +359,10 @@ function accessLabel(a) {
 function accessInfo(a) {
   const last = a.in_out?.length ? (a.in_out.find(io => io.is_last) || a.in_out[a.in_out.length - 1]) : null;
   const open = last && last.net_weight == null;
-  const subject = (open && last.subject?.social_reason) || a.subject?.social_reason;
+  const customer = (open && last.customer?.social_reason) || a.customer?.social_reason;
+  const supplier = (open && last.supplier?.social_reason) || a.supplier?.social_reason;
   const material = (open && last.material?.description) || a.material?.description;
-  return [subject, material].filter(Boolean).join(' · ');
+  return [customer, supplier, material].filter(Boolean).join(' · ');
 }
 function safeGet(k) { try { return localStorage.getItem(k); } catch (_) { return null; } }
 function safeSet(k, v) { try { localStorage.setItem(k, v); } catch (_) {} }

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, Request
 from fastapi.responses import StreamingResponse
 from typing import Dict, Union, Optional
-from modules.md_database.md_database import AccessStatus, LockRecordType, TypeAccess, TypeSubjectEnum
+from modules.md_database.md_database import AccessStatus, LockRecordType, TypeAccess
 from modules.md_database.interfaces.access import Access, AddAccessDTO, SetAccessDTO
 from modules.md_database.interfaces.material import Material
 from modules.md_database.interfaces.operator import Operator
@@ -24,7 +24,7 @@ from modules.md_database.functions.get_in_out_by_id import get_in_out_by_id
 from modules.md_database.functions.safe_get_attr import safe_get_attr
 from applications.utils.utils import get_query_params
 from applications.utils.utils_weigher import get_query_params_name_node, InstanceNameWeigherDTO
-from applications.utils.utils_report import find_file_in_directory, compute_grouped_totals, write_xlsx_totals_section, build_pdf_totals_flowables, resolve_in_out_subject, resolve_in_out_vector, resolve_in_out_type_subject
+from applications.utils.utils_report import find_file_in_directory, compute_grouped_totals, write_xlsx_totals_section, build_pdf_totals_flowables, resolve_in_out_customer, resolve_in_out_supplier, resolve_in_out_vector
 from applications.router.anagrafic.web_sockets import WebSocket
 from applications.router.anagrafic.panel_siren.router import PanelSirenRouter
 from applications.router.weigher.manager_weighers_data import broadcastMessageWebSocket
@@ -106,7 +106,8 @@ class AccessRouter(PanelSirenRouter):
                                     transits=transits,
                                     permanentIfWeight1=permanentIfWeight1,
                                     exclude_manually_access=excludeManuallyAccess,
-                                    load_subject=lb_config.g_config["app_api"]["use_anagrafic"]["subject"],
+                                    load_customer=lb_config.g_config["app_api"]["use_anagrafic"]["customer"],
+                                    load_supplier=lb_config.g_config["app_api"]["use_anagrafic"]["supplier"],
                                     load_vector=lb_config.g_config["app_api"]["use_anagrafic"]["vector"],
                                     load_driver=lb_config.g_config["app_api"]["use_anagrafic"]["driver"],
                                     load_vehicle=lb_config.g_config["app_api"]["use_anagrafic"]["vehicle"],
@@ -166,7 +167,8 @@ class AccessRouter(PanelSirenRouter):
                 order_by=('id', 'desc'),
                 excludeTestWeighing=excludeTestWeighing,
                 get_is_last=True,
-                load_subject=lb_config.g_config["app_api"]["use_anagrafic"]["subject"],
+                load_customer=lb_config.g_config["app_api"]["use_anagrafic"]["customer"],
+                load_supplier=lb_config.g_config["app_api"]["use_anagrafic"]["supplier"],
                 load_vector=lb_config.g_config["app_api"]["use_anagrafic"]["vector"],
                 load_driver=lb_config.g_config["app_api"]["use_anagrafic"]["driver"],
                 load_vehicle=lb_config.g_config["app_api"]["use_anagrafic"]["vehicle"],
@@ -319,7 +321,8 @@ class AccessRouter(PanelSirenRouter):
                 del filters["onlyInOutWithoutWeight2"]
 
             # Leggi configurazioni
-            load_subject = lb_config.g_config["app_api"]["use_anagrafic"]["subject"]
+            load_customer = lb_config.g_config["app_api"]["use_anagrafic"]["customer"]
+            load_supplier = lb_config.g_config["app_api"]["use_anagrafic"]["supplier"]
             load_vector = lb_config.g_config["app_api"]["use_anagrafic"]["vector"]
             load_driver = lb_config.g_config["app_api"]["use_anagrafic"]["driver"]
             load_vehicle = lb_config.g_config["app_api"]["use_anagrafic"]["vehicle"]
@@ -345,7 +348,8 @@ class AccessRouter(PanelSirenRouter):
                 order_by=('id', 'desc'),
                 excludeTestWeighing=excludeTestWeighing,
                 filterDateAccess=filterDateAccess,
-                load_subject=load_subject,
+                load_customer=load_customer,
+                load_supplier=load_supplier,
                 load_vector=load_vector,
                 load_driver=load_driver,
                 load_vehicle=load_vehicle,
@@ -373,9 +377,13 @@ class AccessRouter(PanelSirenRouter):
                 if load_vehicle:
                     row["Targa"] = inout.access.vehicle.plate if inout.access.vehicle else None
 
-                if load_subject:
-                    subject = resolve_in_out_subject(inout)
-                    row["Cliente/Fornitore"] = subject.social_reason if subject else None
+                if load_customer:
+                    customer = resolve_in_out_customer(inout)
+                    row["Cliente"] = customer.social_reason if customer else None
+
+                if load_supplier:
+                    supplier = resolve_in_out_supplier(inout)
+                    row["Fornitore"] = supplier.social_reason if supplier else None
 
                 if load_vector:
                     vector = resolve_in_out_vector(inout)
@@ -426,15 +434,15 @@ class AccessRouter(PanelSirenRouter):
                 value_fn=lambda inout: inout.net_weight,
             ) if load_material and show_export_totals else []
             customer_totals = compute_grouped_totals(
-                [inout for inout in data if resolve_in_out_type_subject(inout) == TypeSubjectEnum.CUSTOMER],
-                key_fn=lambda inout: resolve_in_out_subject(inout).social_reason if resolve_in_out_subject(inout) else None,
+                [inout for inout in data if resolve_in_out_customer(inout)],
+                key_fn=lambda inout: resolve_in_out_customer(inout).social_reason,
                 value_fn=lambda inout: inout.net_weight,
-            ) if load_subject and show_export_totals else []
+            ) if load_customer and show_export_totals else []
             supplier_totals = compute_grouped_totals(
-                [inout for inout in data if resolve_in_out_type_subject(inout) == TypeSubjectEnum.SUPPLIER],
-                key_fn=lambda inout: resolve_in_out_subject(inout).social_reason if resolve_in_out_subject(inout) else None,
+                [inout for inout in data if resolve_in_out_supplier(inout)],
+                key_fn=lambda inout: resolve_in_out_supplier(inout).social_reason,
                 value_fn=lambda inout: inout.net_weight,
-            ) if load_subject and show_export_totals else []
+            ) if load_supplier and show_export_totals else []
             plate_totals = compute_grouped_totals(
                 data,
                 key_fn=lambda inout: inout.access.vehicle.plate if inout.access and inout.access.vehicle else None,
@@ -511,7 +519,8 @@ class AccessRouter(PanelSirenRouter):
                 del filters["onlyInOutWithoutWeight2"]
 
             # Leggi configurazioni
-            load_subject = lb_config.g_config["app_api"]["use_anagrafic"]["subject"]
+            load_customer = lb_config.g_config["app_api"]["use_anagrafic"]["customer"]
+            load_supplier = lb_config.g_config["app_api"]["use_anagrafic"]["supplier"]
             load_vector = lb_config.g_config["app_api"]["use_anagrafic"]["vector"]
             load_driver = lb_config.g_config["app_api"]["use_anagrafic"]["driver"]
             load_vehicle = lb_config.g_config["app_api"]["use_anagrafic"]["vehicle"]
@@ -537,7 +546,8 @@ class AccessRouter(PanelSirenRouter):
                 order_by=('id', 'desc'),
                 excludeTestWeighing=excludeTestWeighing,
                 filterDateAccess=filterDateAccess,
-                load_subject=load_subject,
+                load_customer=load_customer,
+                load_supplier=load_supplier,
                 load_vector=load_vector,
                 load_driver=load_driver,
                 load_vehicle=load_vehicle,
@@ -582,9 +592,12 @@ class AccessRouter(PanelSirenRouter):
                 headers.append('Targa')
                 col_widths.append(30)
             
-            if load_subject:
-                headers.append('Cliente/Forn.')
-                col_widths.append(55)
+            if load_customer:
+                headers.append('Cliente')
+                col_widths.append(50)
+            if load_supplier:
+                headers.append('Fornitore')
+                col_widths.append(50)
             
             if load_vector:
                 headers.append('Vettore')
@@ -664,9 +677,12 @@ class AccessRouter(PanelSirenRouter):
                 if load_vehicle:
                     row.append(str(inout.access.vehicle.plate if inout.access.vehicle else '')[:6])
                 
-                if load_subject:
-                    subject = resolve_in_out_subject(inout)
-                    row.append(str(subject.social_reason if subject else '')[:18])
+                if load_customer:
+                    customer = resolve_in_out_customer(inout)
+                    row.append(str(customer.social_reason if customer else '')[:16])
+                if load_supplier:
+                    supplier = resolve_in_out_supplier(inout)
+                    row.append(str(supplier.social_reason if supplier else '')[:16])
 
                 if load_vector:
                     vector = resolve_in_out_vector(inout)
@@ -727,15 +743,15 @@ class AccessRouter(PanelSirenRouter):
                     value_fn=lambda inout: inout.net_weight,
                 ) if load_material else []
                 customer_totals = compute_grouped_totals(
-                    [inout for inout in data if resolve_in_out_type_subject(inout) == TypeSubjectEnum.CUSTOMER],
-                    key_fn=lambda inout: resolve_in_out_subject(inout).social_reason if resolve_in_out_subject(inout) else None,
+                    [inout for inout in data if resolve_in_out_customer(inout)],
+                    key_fn=lambda inout: resolve_in_out_customer(inout).social_reason,
                     value_fn=lambda inout: inout.net_weight,
-                ) if load_subject else []
+                ) if load_customer else []
                 supplier_totals = compute_grouped_totals(
-                    [inout for inout in data if resolve_in_out_type_subject(inout) == TypeSubjectEnum.SUPPLIER],
-                    key_fn=lambda inout: resolve_in_out_subject(inout).social_reason if resolve_in_out_subject(inout) else None,
+                    [inout for inout in data if resolve_in_out_supplier(inout)],
+                    key_fn=lambda inout: resolve_in_out_supplier(inout).social_reason,
                     value_fn=lambda inout: inout.net_weight,
-                ) if load_subject else []
+                ) if load_supplier else []
                 plate_totals = compute_grouped_totals(
                     data,
                     key_fn=lambda inout: inout.access.vehicle.plate if inout.access and inout.access.vehicle else None,
@@ -767,7 +783,8 @@ class AccessRouter(PanelSirenRouter):
             elif request is not None:
                 status = None
 
-            body.subject.id = body.subject.id if body.subject.id not in [None, -1] else None
+            body.customer.id = body.customer.id if body.customer.id not in [None, -1] else None
+            body.supplier.id = body.supplier.id if body.supplier.id not in [None, -1] else None
             body.vector.id = body.vector.id if body.vector.id not in [None, -1] else None
             body.driver.id = body.driver.id if body.driver.id not in [None, -1] else None
             body.vehicle.id = body.vehicle.id if body.vehicle.id not in [None, -1] else None
@@ -779,8 +796,10 @@ class AccessRouter(PanelSirenRouter):
 
             access = Access(**get_access_data)
             await self.broadcastAddAnagrafic("access", {"access": access.json()})
-            if not body.subject.id and access.idSubject:
-                await self.broadcastAddAnagrafic("subject", {"subject": access.subject.json()})
+            if not body.customer.id and access.idCustomer:
+                await self.broadcastAddAnagrafic("customer", {"customer": access.customer.json()})
+            if not body.supplier.id and access.idSupplier:
+                await self.broadcastAddAnagrafic("supplier", {"supplier": access.supplier.json()})
             if not body.vector.id and access.idVector:
                 await self.broadcastAddAnagrafic("vector", {"vector": access.vector.json()})
             if not body.driver.id and access.idDriver:
@@ -814,8 +833,10 @@ class AccessRouter(PanelSirenRouter):
             if idInOut:
                 in_out = get_in_out_by_id(idInOut)
             await self.broadcastUpdateAnagrafic("access", {"access": access.json()})
-            if body.subject.id in [None, -1] and access.idSubject:
-                await self.broadcastAddAnagrafic("subject", {"subject": access.subject.json()})
+            if body.customer.id in [None, -1] and access.idCustomer:
+                await self.broadcastAddAnagrafic("customer", {"customer": access.customer.json()})
+            if body.supplier.id in [None, -1] and access.idSupplier:
+                await self.broadcastAddAnagrafic("supplier", {"supplier": access.supplier.json()})
             if body.vector.id in [None, -1] and access.idVector:
                 await self.broadcastAddAnagrafic("vector", {"vector": access.vector.json()})
             if body.driver.id in [None, -1] and access.idDriver:

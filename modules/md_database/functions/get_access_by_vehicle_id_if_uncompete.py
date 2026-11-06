@@ -36,7 +36,8 @@ def get_access_by_vehicle_id_if_uncomplete(id: int):
         )
 
         access = session.query(Access).options(
-            joinedload(Access.subject),
+            joinedload(Access.customer),
+            joinedload(Access.supplier),
             joinedload(Access.vector),
             joinedload(Access.driver),
             joinedload(Access.vehicle),

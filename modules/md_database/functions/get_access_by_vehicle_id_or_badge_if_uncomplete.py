@@ -46,7 +46,8 @@ def get_access_by_vehicle_id_or_badge_if_uncomplete(vehicle_id: int, badge: str 
             )
 
         access = session.query(Access).options(
-            joinedload(Access.subject),
+            joinedload(Access.customer),
+            joinedload(Access.supplier),
             joinedload(Access.vector),
             joinedload(Access.driver),
             joinedload(Access.vehicle)

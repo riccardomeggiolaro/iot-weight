@@ -1,5 +1,5 @@
 from sqlalchemy.orm import selectinload
-from modules.md_database.md_database import SessionLocal, Weighing, InOut, Access, User, Subject, Vector, Driver
+from modules.md_database.md_database import SessionLocal, Weighing, InOut, Access, User, Customer, Supplier, Vector, Driver
 
 def get_last_in_out_by_weigher(weigher_name=None):
     """
@@ -27,11 +27,13 @@ def get_last_in_out_by_weigher(weigher_name=None):
                         selectinload(InOut.access).options(
                             selectinload(Access.vehicle),
                             selectinload(Access.driver),
-                            selectinload(Access.subject),
+                            selectinload(Access.customer),
+                            selectinload(Access.supplier),
                             selectinload(Access.vector),
                             selectinload(Access.material)
                         ),
-                        selectinload(InOut.subject),
+                        selectinload(InOut.customer),
+                        selectinload(InOut.supplier),
                         selectinload(InOut.vector),
                         selectinload(InOut.driver),
                         selectinload(InOut.material),

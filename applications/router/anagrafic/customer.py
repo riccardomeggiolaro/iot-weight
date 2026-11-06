@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Request
 from typing import Dict, Union, Optional
 from modules.md_database.md_database import upload_file_datas_required_columns, LockRecordType
-from modules.md_database.interfaces.subject import Subject, AddSubjectDTO, SetSubjectDTO
+from modules.md_database.interfaces.customer import Customer, AddCustomerDTO, SetCustomerDTO
 from modules.md_database.functions.filter_data import filter_data
 from modules.md_database.functions.add_data import add_data
 from modules.md_database.functions.delete_data import delete_data
@@ -17,20 +17,20 @@ from applications.utils.utils import get_query_params, convert_value
 from applications.router.anagrafic.web_sockets import WebSocket
 from applications.middleware.writable_user import is_writable_user
 
-class SubjectRouter(WebSocket):
+class CustomerRouter(WebSocket):
     def __init__(self):
         super().__init__()
         
         self.router = APIRouter()
         
-        self.router.add_api_route('/list', self.getListSubjects, methods=['GET'])
-        self.router.add_api_route('', self.addSubject, methods=['POST'], dependencies=[Depends(is_writable_user)])
-        self.router.add_api_route('/{id}', self.setSubject, methods=['PATCH'], dependencies=[Depends(is_writable_user)])
-        self.router.add_api_route('/{id}', self.deleteSubject, methods=['DELETE'], dependencies=[Depends(is_writable_user)])
-        self.router.add_api_route('', self.deleteAllSubjects, methods=['DELETE'], dependencies=[Depends(is_writable_user)])
+        self.router.add_api_route('/list', self.getListCustomers, methods=['GET'])
+        self.router.add_api_route('', self.addCustomer, methods=['POST'], dependencies=[Depends(is_writable_user)])
+        self.router.add_api_route('/{id}', self.setCustomer, methods=['PATCH'], dependencies=[Depends(is_writable_user)])
+        self.router.add_api_route('/{id}', self.deleteCustomer, methods=['DELETE'], dependencies=[Depends(is_writable_user)])
+        self.router.add_api_route('', self.deleteAllCustomers, methods=['DELETE'], dependencies=[Depends(is_writable_user)])
         self.router.add_api_route('/upload-file', self.upload_file, methods=['POST'], dependencies=[Depends(is_writable_user)])
 
-    async def getListSubjects(self, query_params: Dict[str, Union[str, int]] = Depends(get_query_params), limit: Optional[int] = None, offset: Optional[int] = None, order_by: Optional[str] = None, order_direction: Optional[str] = None):
+    async def getListCustomers(self, query_params: Dict[str, Union[str, int]] = Depends(get_query_params), limit: Optional[int] = None, offset: Optional[int] = None, order_by: Optional[str] = None, order_direction: Optional[str] = None):
         try:
             if limit is not None:
                 del query_params["limit"]
@@ -41,7 +41,7 @@ class SubjectRouter(WebSocket):
             if order_direction is not None:
                 del query_params["order_direction"]
             sort = (order_by, order_direction if order_direction else 'asc') if order_by else ('date_created', 'desc')
-            data, total_rows = filter_data("subject", query_params, limit, offset, None, None, sort)
+            data, total_rows = filter_data("customer", query_params, limit, offset, None, None, sort)
             return {
                 "data": data,
                 "total_rows": total_rows
@@ -49,12 +49,12 @@ class SubjectRouter(WebSocket):
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"{e}")
 
-    async def addSubject(self, body: AddSubjectDTO):
+    async def addCustomer(self, body: AddCustomerDTO):
         try:
-            data = add_data("subject", body.dict())
-            subject = Subject(**data).json()
-            await self.broadcastAddAnagrafic("subject", {"subject": subject})
-            await self.broadcastAddAnagrafic("access", {"subject": subject})
+            data = add_data("customer", body.dict())
+            customer = Customer(**data).json()
+            await self.broadcastAddAnagrafic("customer", {"customer": customer})
+            await self.broadcastAddAnagrafic("access", {"customer": customer})
             return data
         except Exception as e:
             # Verifica se l'eccezione ha un attributo 'status_code' e usa quello, altrimenti usa 404
@@ -62,16 +62,16 @@ class SubjectRouter(WebSocket):
             detail = getattr(e, 'detail', str(e))
             raise HTTPException(status_code=status_code, detail=detail)
 
-    async def setSubject(self, request: Request, id: int, body: SetSubjectDTO):
+    async def setCustomer(self, request: Request, id: int, body: SetCustomerDTO):
         locked_data = None
         try:
-            locked_data = get_data_by_attributes('lock_record', {"table_name": "subject", "idRecord": id, "type": LockRecordType.UPDATE, "user_id": request.state.user.id})
+            locked_data = get_data_by_attributes('lock_record', {"table_name": "customer", "idRecord": id, "type": LockRecordType.UPDATE, "user_id": request.state.user.id})
             if not locked_data:
-                raise HTTPException(status_code=400, detail=f"You need to block the subject with id '{id}' before to update that")
-            data = update_data("subject", id, body.dict())
-            subject = Subject(**data).json()
-            await self.broadcastUpdateAnagrafic("subject", {"subject": subject})
-            await self.broadcastUpdateAnagrafic("access", {"subject": subject})
+                raise HTTPException(status_code=400, detail=f"You need to block the customer with id '{id}' before to update that")
+            data = update_data("customer", id, body.dict())
+            customer = Customer(**data).json()
+            await self.broadcastUpdateAnagrafic("customer", {"customer": customer})
+            await self.broadcastUpdateAnagrafic("access", {"customer": customer})
             return data
         except Exception as e:
             # Verifica se l'eccezione ha un attributo 'status_code' e usa quello, altrimenti usa 404
@@ -84,19 +84,19 @@ class SubjectRouter(WebSocket):
             if locked_data:
                 unlock_record_by_id(locked_data["id"])
 
-    async def deleteSubject(self, request: Request, id: int):
+    async def deleteCustomer(self, request: Request, id: int):
         locked_data = None
         try:
-            locked_data = get_data_by_attributes('lock_record', {"table_name": "subject", "idRecord": id, "type": LockRecordType.DELETE, "user_id": request.state.user.id})
+            locked_data = get_data_by_attributes('lock_record', {"table_name": "customer", "idRecord": id, "type": LockRecordType.DELETE, "user_id": request.state.user.id})
             if not locked_data:
-                raise HTTPException(status_code=403, detail=f"You need to block the subject with id '{id}' before to update that")
-            check_subject_accesses = get_data_by_id("subject", id)
-            if check_subject_accesses and len(check_subject_accesses["accesses"]) > 0:
-                raise HTTPException(status_code=400, detail=f"Il soggetto con id '{id}' è assegnato a delle pesate salvate")
-            data = delete_data("subject", id)
-            subject = Subject(**data).json()
-            await self.broadcastDeleteAnagrafic("subject", {"subject": subject})
-            await self.broadcastDeleteAnagrafic("access", {"subject": subject})
+                raise HTTPException(status_code=403, detail=f"You need to block the customer with id '{id}' before to update that")
+            check_customer_accesses = get_data_by_id("customer", id)
+            if check_customer_accesses and len(check_customer_accesses["accesses"]) > 0:
+                raise HTTPException(status_code=400, detail=f"Il cliente con id '{id}' è assegnato a delle pesate salvate")
+            data = delete_data("customer", id)
+            customer = Customer(**data).json()
+            await self.broadcastDeleteAnagrafic("customer", {"customer": customer})
+            await self.broadcastDeleteAnagrafic("access", {"customer": customer})
             return data
         except Exception as e:
             status_code = getattr(e, 'status_code', 404)
@@ -106,9 +106,9 @@ class SubjectRouter(WebSocket):
             if locked_data:
                 unlock_record_by_id(locked_data["id"])
 
-    async def deleteAllSubjects(self):
+    async def deleteAllCustomers(self):
         try:
-            deleted_count, preserved_count, total_records = delete_all_data_if_not_correlations("subject")
+            deleted_count, preserved_count, total_records = delete_all_data_if_not_correlations("customer")
             return {
                 "deleted_count": deleted_count,
                 "preserved_count": preserved_count,
@@ -133,7 +133,7 @@ class SubjectRouter(WebSocket):
             df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
 
             # Definizione delle colonne richieste
-            required_column = upload_file_datas_required_columns["subject"]
+            required_column = upload_file_datas_required_columns["customer"]
 
             allowed_columns = set(required_column.keys())
 
@@ -167,7 +167,7 @@ class SubjectRouter(WebSocket):
 
         try:
             # Salva i dati nel database
-            length = load_datas_into_db("subject", data)
+            length = load_datas_into_db("customer", data)
 
             return {"message": f"{length} records loaded successfully"}
         except Exception as e:

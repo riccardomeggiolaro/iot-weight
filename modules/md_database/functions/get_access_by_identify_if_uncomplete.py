@@ -36,7 +36,8 @@ def get_access_by_identify_if_uncomplete(identify: str):
         )
 
         access = session.query(Access).options(
-            selectinload(Access.subject),
+            selectinload(Access.customer),
+            selectinload(Access.supplier),
             selectinload(Access.vector),
             selectinload(Access.driver),
             selectinload(Access.vehicle),

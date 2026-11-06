@@ -70,13 +70,15 @@ def fetch_hidden(conn, status_filter):
             a.status,
             a.type,
             a.date_created,
-            s.social_reason  AS subject,
+            c.social_reason  AS customer,
+            f.social_reason  AS supplier,
             v.social_reason  AS vector,
             d.social_reason  AS driver,
             vh.plate         AS vehicle,
             m.description    AS material
         FROM access a
-        LEFT JOIN subject  s  ON s.id  = a.idSubject
+        LEFT JOIN customer c  ON c.id  = a.idCustomer
+        LEFT JOIN supplier f  ON f.id  = a.idSupplier
         LEFT JOIN vector   v  ON v.id  = a.idVector
         LEFT JOIN driver   d  ON d.id  = a.idDriver
         LEFT JOIN vehicle  vh ON vh.id = a.idVehicle
@@ -132,7 +134,8 @@ def main():
             "ID":       r["id"],
             "Stato":    r["status"],
             "Tipo":     r["type"],
-            "Soggetto": r["subject"],
+            "Cliente":  r["customer"],
+            "Fornitore":r["supplier"],
             "Vettore":  r["vector"],
             "Autista":  r["driver"],
             "Veicolo":  r["vehicle"],

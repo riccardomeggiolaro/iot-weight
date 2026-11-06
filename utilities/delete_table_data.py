@@ -6,7 +6,7 @@ Mostra prima il numero di record da eliminare e chiede conferma
 prima di procedere.
 
 Utilizzo:
-    python3 delete_table_data.py --tables subject vector
+    python3 delete_table_data.py --tables customer supplier vector
     python3 delete_table_data.py --tables access in_out --db /percorso/database.db
     python3 delete_table_data.py --all
     python3 delete_table_data.py --all --force
@@ -23,7 +23,8 @@ DEFAULT_DB = "/var/opt/in-out/database.db"
 # Tutte le tabelle disponibili con nome visualizzato
 AVAILABLE_TABLES = [
     "user",
-    "subject",
+    "customer",
+    "supplier",
     "vector",
     "driver",
     "vehicle",
@@ -46,7 +47,8 @@ DELETION_ORDER = [
     "weighing",
     "access",
     "card_registry",
-    "subject",
+    "customer",
+    "supplier",
     "vector",
     "driver",
     "vehicle",
@@ -117,7 +119,7 @@ def main():
         "--tables",
         nargs="+",
         metavar="TABELLA",
-        help="Una o più tabelle da svuotare (es. --tables subject vector)",
+        help="Una o più tabelle da svuotare (es. --tables customer supplier vector)",
     )
     parser.add_argument(
         "--all",

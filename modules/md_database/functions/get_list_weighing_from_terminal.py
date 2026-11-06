@@ -13,7 +13,8 @@ def get_list_weighing_from_terminal(
     limit=None,
     offset=None,
     order_by=None,
-    load_subject=True,
+    load_customer=True,
+    load_supplier=True,
     load_vehicle=True,
     load_material=True,
     load_note=True,
@@ -28,8 +29,10 @@ def get_list_weighing_from_terminal(
 
         # Costruisci dinamicamente la lista delle colonne da caricare
         columns_to_load = ["id", "id_terminal", "bil", "net_weight"]
-        if load_subject:
-            columns_to_load += ["customer", "supplier"]
+        if load_customer:
+            columns_to_load.append("customer")
+        if load_supplier:
+            columns_to_load.append("supplier")
         if load_vehicle:
             columns_to_load.append("plate")
         if load_material:

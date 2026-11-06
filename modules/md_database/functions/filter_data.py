@@ -40,7 +40,7 @@ def filter_data(table_name, filters=None, limit=None, offset=None, fromDate=None
         # Aggiungi i filtri, se specificati
         if filters:
             for key, value in filters.items():
-                # Handle nested attributes (e.g. "subject.social_reason")
+                # Handle nested attributes (e.g. "customer.social_reason")
                 if "." in key:
                     parts = key.split(".")
                     rel_name = parts[0]

@@ -53,7 +53,8 @@ def lock_record(table_name, idRecord, type, websocket_identifier, user_id, weigh
                 
                 # Mappa delle chiavi esterne che collegano Access con altre tabelle
                 foreign_key_map = {
-                    "subject": Access.idSubject,
+                    "customer": Access.idCustomer,
+                    "supplier": Access.idSupplier,
                     "vector": Access.idVector,
                     "driver": Access.idDriver,
                     "vehicle": Access.idVehicle
@@ -95,7 +96,8 @@ def lock_record(table_name, idRecord, type, websocket_identifier, user_id, weigh
                 if reservation_data:
                     # Mappa delle entità associate con i loro ID
                     associated_entities = {
-                        "subject": reservation_data.idSubject,
+                        "customer": reservation_data.idCustomer,
+                        "supplier": reservation_data.idSupplier,
                         "vector": reservation_data.idVector,
                         "driver": reservation_data.idDriver,
                         "vehicle": reservation_data.idVehicle

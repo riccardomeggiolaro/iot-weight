@@ -2,7 +2,8 @@ from jinja2 import Environment, FileSystemLoader, meta, Undefined
 import os
 from applications.router.weigher.types import ReportVariables, WeighingPicture
 import libs.lb_config as lb_config
-from modules.md_database.interfaces.subject import SubjectDataDTO
+from modules.md_database.interfaces.customer import CustomerDataDTO
+from modules.md_database.interfaces.supplier import SupplierDataDTO
 from modules.md_database.interfaces.vector import VectorDataDTO
 from modules.md_database.interfaces.driver import DriverDataDTO
 from modules.md_database.interfaces.vehicle import VehicleDataDTO
@@ -28,8 +29,8 @@ def get_data_variables(in_out, is_generic=False):
         report = report_out if in_out.idWeight2 else report_in
     name_file = ""
     variables = ReportVariables(**{})
-    variables.typeSubject = in_out.typeSubject.value if in_out.typeSubject else None
-    variables.subject = in_out.subject if in_out.subject else SubjectDataDTO(**{})
+    variables.customer = in_out.customer if in_out.customer else CustomerDataDTO(**{})
+    variables.supplier = in_out.supplier if in_out.supplier else SupplierDataDTO(**{})
     variables.vector = in_out.vector if in_out.vector else VectorDataDTO(**{})
     variables.driver = in_out.driver if in_out.driver else DriverDataDTO(**{})
     variables.vehicle = in_out.access.vehicle if in_out.access and in_out.access.vehicle else VehicleDataDTO(**{})
@@ -144,11 +145,14 @@ def generate_html_report(reports_dir, report_name_file, v: ReportVariables = Non
 
 def generate_csv_report(variables: ReportVariables):
     data = [
-        variables.typeSubject,
-        variables.subject.id if variables.subject.id else '',
-        variables.subject.social_reason if variables.subject.social_reason else '',
-        variables.subject.telephone if variables.subject.telephone else '',
-        variables.subject.cfpiva if variables.subject.cfpiva else '',
+        variables.customer.id if variables.customer.id else '',
+        variables.customer.social_reason if variables.customer.social_reason else '',
+        variables.customer.telephone if variables.customer.telephone else '',
+        variables.customer.cfpiva if variables.customer.cfpiva else '',
+        variables.supplier.id if variables.supplier.id else '',
+        variables.supplier.social_reason if variables.supplier.social_reason else '',
+        variables.supplier.telephone if variables.supplier.telephone else '',
+        variables.supplier.cfpiva if variables.supplier.cfpiva else '',
         variables.vector.id if variables.vector.id else '',
         variables.vector.social_reason if variables.vector.social_reason else '',
         variables.vector.telephone if variables.vector.telephone else '',
@@ -199,16 +203,16 @@ def find_file_in_directory(directory, filename):
                 return f.read()  # Restituisce i byte del file
     return None
 
-def resolve_in_out_subject(in_out):
-    # Il soggetto va preso dalla pesata (in_out), mai dall'accesso: l'accesso può
-    # derivare da una prenotazione e portare un soggetto diverso da quello pesato.
-    return in_out.subject
+def resolve_in_out_customer(in_out):
+    # Cliente e fornitore vanno presi dalla pesata (in_out), mai dall'accesso: l'accesso può
+    # derivare da una prenotazione e portare dati diversi da quelli pesati.
+    return in_out.customer
+
+def resolve_in_out_supplier(in_out):
+    return in_out.supplier
 
 def resolve_in_out_vector(in_out):
     return in_out.vector
-
-def resolve_in_out_type_subject(in_out):
-    return in_out.typeSubject
 
 def compute_grouped_totals(items, key_fn, value_fn, default_label="Non specificato"):
     totals = {}
@@ -254,3 +258,60 @@ def build_pdf_totals_flowables(styles, title, label_header, value_header, totals
     ]))
     flowables.append(totals_table)
     return flowables
+# ── Migrazione modelli di stampa: soggetto unico → cliente e fornitore ──────────
+import re as _re
+
+_CUSTOMER_OK = "customer and customer.social_reason"
+_SUPPLIER_OK = "supplier and supplier.social_reason"
+_SUBJECT_LINE = (
+    "{% if " + _CUSTOMER_OK + " %}Cliente:&nbsp;{{ customer.social_reason }}{% endif %}"
+    "{% if " + _CUSTOMER_OK + " and " + _SUPPLIER_OK + " %}<br>{% endif %}"
+    "{% if " + _SUPPLIER_OK + " %}Fornitore:&nbsp;{{ supplier.social_reason }}{% endif %}"
+)
+_RE_TYPE_AND_NAME = _re.compile(r"\{\{\s*typeSubject\s*\}\}\s*:\s*(?:&nbsp;|\s)*\{\{\s*subject\.social_reason\s*\}\}")
+_RE_TYPE = _re.compile(r"\{\{\s*typeSubject\s*\}\}")
+_RE_FIELD = _re.compile(r"\{\{\s*subject\.(\w+)\s*\}\}")
+
+
+def migrate_subject_in_template(text: str) -> str:
+    """
+    Converte un modello di stampa dalle vecchie variabili {{ typeSubject }} / {{ subject.* }}
+    alle nuove {{ customer.* }} / {{ supplier.* }}.
+    "{{ typeSubject }}: {{ subject.social_reason }}" diventa una riga "Cliente: ..." e/o "Fornitore: ...".
+    """
+    text = _RE_TYPE_AND_NAME.sub(lambda m: _SUBJECT_LINE, text)
+    text = _RE_TYPE.sub(lambda m: "{% if " + _CUSTOMER_OK + " %}Cliente{% elif " + _SUPPLIER_OK + " %}Fornitore{% endif %}", text)
+    text = _RE_FIELD.sub(lambda m: (
+        "{{ customer." + m[1] + " if customer and customer." + m[1] +
+        " else (supplier." + m[1] + " if supplier else '') }}"
+    ), text)
+    return text
+
+
+def migrate_report_templates(reports_dir) -> int:
+    """Aggiorna i modelli di stampa (.json/.html) nella cartella dei report. Restituisce i file modificati."""
+    changed = 0
+    if not reports_dir or not os.path.isdir(reports_dir):
+        return 0
+    for root, _dirs, files in os.walk(reports_dir):
+        for name in files:
+            if not name.lower().endswith((".json", ".html")):
+                continue
+            path = os.path.join(root, name)
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    original = f.read()
+                if "typeSubject" not in original and "subject." not in original:
+                    continue
+                updated = migrate_subject_in_template(original)
+                if updated == original:
+                    continue
+                if name.lower().endswith(".json"):
+                    json.loads(updated)  # non salvare un JSON rotto
+                with open(path, "w", encoding="utf-8") as f:
+                    f.write(updated)
+                changed += 1
+            except Exception as e:
+                import libs.lb_log as lb_log
+                lb_log.error(f"Migrazione modello di stampa '{path}' non riuscita: {e}")
+    return changed

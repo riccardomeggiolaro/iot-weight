@@ -88,7 +88,8 @@ class WeighingTerminalRouter(WebSocket):
                 limit=limit, 
                 offset=offset, 
                 order_by=('date_created', 'desc'),
-                load_subject=lb_config.g_config["app_api"]["use_anagrafic"]["subject"],
+                load_customer=lb_config.g_config["app_api"]["use_anagrafic"]["customer"],
+                load_supplier=lb_config.g_config["app_api"]["use_anagrafic"]["supplier"],
                 load_vehicle=lb_config.g_config["app_api"]["use_anagrafic"]["vehicle"],
                 load_material=lb_config.g_config["app_api"]["use_anagrafic"]["material"],
                 load_note=lb_config.g_config["app_api"]["use_anagrafic"]["note"],
@@ -128,7 +129,9 @@ class WeighingTerminalRouter(WebSocket):
             if "onlyInOutWithoutWeight2" in query_params:
                 del query_params["onlyInOutWithoutWeight2"]
             
-            load_subject = lb_config.g_config["app_api"]["use_anagrafic"]["subject"]
+            load_customer = lb_config.g_config["app_api"]["use_anagrafic"]["customer"]
+            
+            load_supplier = lb_config.g_config["app_api"]["use_anagrafic"]["supplier"]
             load_vehicle = lb_config.g_config["app_api"]["use_anagrafic"]["vehicle"]
             load_material = lb_config.g_config["app_api"]["use_anagrafic"]["material"]
             load_note = lb_config.g_config["app_api"]["use_anagrafic"]["note"]
@@ -146,7 +149,8 @@ class WeighingTerminalRouter(WebSocket):
                 limit=limit, 
                 offset=offset, 
                 order_by=('date_created', 'desc'),
-                load_subject=load_subject,
+                load_customer=load_customer,
+                load_supplier=load_supplier,
                 load_vehicle=load_vehicle,
                 load_material=load_material,
                 load_note=load_note,
@@ -167,8 +171,9 @@ class WeighingTerminalRouter(WebSocket):
                 if load_vehicle:
                     row["Targa"] = weighing.plate
                 
-                if load_subject:
+                if load_customer:
                     row["Cliente"] = weighing.customer
+                if load_supplier:
                     row["Fornitore"] = weighing.supplier
                 
                 if load_material:
@@ -207,10 +212,10 @@ class WeighingTerminalRouter(WebSocket):
             ) if load_material and show_export_totals else []
             customer_totals = compute_grouped_totals(
                 data, key_fn=lambda w: w.customer, value_fn=lambda w: w.net_weight,
-            ) if load_subject and show_export_totals else []
+            ) if load_customer and show_export_totals else []
             supplier_totals = compute_grouped_totals(
                 data, key_fn=lambda w: w.supplier, value_fn=lambda w: w.net_weight,
-            ) if load_subject and show_export_totals else []
+            ) if load_supplier and show_export_totals else []
             plate_totals = compute_grouped_totals(
                 data, key_fn=lambda w: w.plate, value_fn=lambda w: w.net_weight,
             ) if load_vehicle and show_export_totals else []
@@ -263,7 +268,9 @@ class WeighingTerminalRouter(WebSocket):
             if "onlyInOutWithoutWeight2" in query_params:
                 del query_params["onlyInOutWithoutWeight2"]
 
-            load_subject = lb_config.g_config["app_api"]["use_anagrafic"]["subject"]
+            load_customer = lb_config.g_config["app_api"]["use_anagrafic"]["customer"]
+
+            load_supplier = lb_config.g_config["app_api"]["use_anagrafic"]["supplier"]
             load_vehicle = lb_config.g_config["app_api"]["use_anagrafic"]["vehicle"]
             load_material = lb_config.g_config["app_api"]["use_anagrafic"]["material"]
             load_note = lb_config.g_config["app_api"]["use_anagrafic"]["note"]
@@ -281,7 +288,8 @@ class WeighingTerminalRouter(WebSocket):
                 limit=limit, 
                 offset=offset, 
                 order_by=('date_created', 'desc'),
-                load_subject=load_subject,
+                load_customer=load_customer,
+                load_supplier=load_supplier,
                 load_vehicle=load_vehicle,
                 load_material=load_material,
                 load_note=load_note,
@@ -321,9 +329,10 @@ class WeighingTerminalRouter(WebSocket):
                 headers.append('Targa')
                 col_widths.append(30)
             
-            if load_subject:
+            if load_customer:
                 headers.append('Cliente')
                 col_widths.append(55)
+            if load_supplier:
                 headers.append('Fornitore')
                 col_widths.append(55)
 
@@ -393,8 +402,9 @@ class WeighingTerminalRouter(WebSocket):
                 if load_vehicle:
                     row.append(str(weighing.plate if weighing.plate else '')[:6])
                 
-                if load_subject:
+                if load_customer:
                     row.append(str(weighing.customer if weighing.customer else '')[:18])
+                if load_supplier:
                     row.append(str(weighing.supplier if weighing.supplier else '')[:18])
                 
                 if load_material:
@@ -443,10 +453,10 @@ class WeighingTerminalRouter(WebSocket):
                 ) if load_material else []
                 customer_totals = compute_grouped_totals(
                     data, key_fn=lambda w: w.customer, value_fn=lambda w: w.net_weight,
-                ) if load_subject else []
+                ) if load_customer else []
                 supplier_totals = compute_grouped_totals(
                     data, key_fn=lambda w: w.supplier, value_fn=lambda w: w.net_weight,
-                ) if load_subject else []
+                ) if load_supplier else []
                 plate_totals = compute_grouped_totals(
                     data, key_fn=lambda w: w.plate, value_fn=lambda w: w.net_weight,
                 ) if load_vehicle else []

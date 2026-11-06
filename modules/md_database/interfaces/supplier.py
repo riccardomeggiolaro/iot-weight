@@ -3,7 +3,7 @@ from typing import Optional, List
 from modules.md_database.functions.get_data_by_id import get_data_by_id
 from datetime import datetime
 
-class Subject(BaseModel):
+class Supplier(BaseModel):
 	social_reason:  Optional[str] = None
 	telephone: Optional[str] = None
 	cfpiva: Optional[str] = None
@@ -15,7 +15,7 @@ class Subject(BaseModel):
 		# Configurazione per consentire l'uso di valori non dichiarati in fase di validazione
 		arbitrary_types_allowed = True
 
-class SubjectDataDTO(BaseModel):
+class SupplierDataDTO(BaseModel):
 	social_reason:  Optional[str] = None
 	telephone: Optional[str] = None
 	cfpiva: Optional[str] = None
@@ -24,11 +24,11 @@ class SubjectDataDTO(BaseModel):
 	@validator('id', pre=True, always=True)
 	def check_id(cls, v, values):
 		if v not in (None, -1):
-			if not get_data_by_id('subject', v):
-				raise ValueError('Id not exist in subject')
+			if not get_data_by_id('supplier', v):
+				raise ValueError('Id not exist in supplier')
 		return v
 
-class SubjectDTO(BaseModel):
+class SupplierDTO(BaseModel):
 	social_reason:  Optional[str] = None
 	telephone: Optional[str] = None
 	cfpiva: Optional[str] = None
@@ -37,9 +37,9 @@ class SubjectDTO(BaseModel):
 	@validator('id', pre=True, always=True)
 	def check_id(cls, v, values):
 		if v not in (None, -1):
-			data = get_data_by_id('subject', v)
+			data = get_data_by_id('supplier', v)
 			if not data:
-				raise ValueError('Id not exist in subject')
+				raise ValueError('Id not exist in supplier')
 			else:
 				values['social_reason'] = data.get('social_reason')
 				values['telephone'] = data.get('telephone')
@@ -50,7 +50,7 @@ class SubjectDTO(BaseModel):
 		# Configurazione per consentire l'uso di valori non dichiarati in fase di validazione
 		arbitrary_types_allowed = True
 
-class AddSubjectDTO(BaseModel):
+class AddSupplierDTO(BaseModel):
 	social_reason: str
 	telephone: Optional[str] = None
 	cfpiva: Optional[str] = None
@@ -62,7 +62,7 @@ class AddSubjectDTO(BaseModel):
 			return None
 		return value
 
-class SetSubjectDTO(BaseModel):
+class SetSupplierDTO(BaseModel):
 	social_reason:  Optional[str] = None
 	telephone: Optional[str] = None
 	cfpiva: Optional[str] = None
@@ -76,7 +76,7 @@ class SetSubjectDTO(BaseModel):
 			raise ValueError('At least one of "name", "telephone" or "cfpiva" must be provided.')
 		return values
 	
-class FilterSubjectDTO(BaseModel):
+class FilterSupplierDTO(BaseModel):
 	social_reason:  Optional[str] = None
 	telephone: Optional[str] = None
 	cfpiva: Optional[str] = None

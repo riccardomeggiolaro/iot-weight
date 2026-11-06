@@ -1,6 +1,7 @@
 from pydantic import BaseModel, validator
 from typing import Optional, List
-from modules.md_database.interfaces.subject import Subject, SubjectDataDTO
+from modules.md_database.interfaces.customer import Customer, CustomerDataDTO
+from modules.md_database.interfaces.supplier import Supplier, SupplierDataDTO
 from modules.md_database.interfaces.vector import Vector, VectorDataDTO
 from modules.md_database.interfaces.driver import Driver, DriverDataDTO
 from modules.md_database.interfaces.vehicle import Vehicle, VehicleDataDTO
@@ -12,8 +13,8 @@ from datetime import datetime
 
 class Access(BaseModel):
     id: Optional[int] = None
-    typeSubject: Optional[str] = None
-    idSubject: Optional[int] = None
+    idCustomer: Optional[int] = None
+    idSupplier: Optional[int] = None
     idVector: Optional[int] = None
     idDriver: Optional[int] = None
     idVehicle: Optional[int] = None
@@ -28,7 +29,8 @@ class Access(BaseModel):
     hidden: Optional[bool] = None
     mode: Optional[str] = None
 
-    subject: Optional[Subject] = None
+    customer: Optional[Customer] = None
+    supplier: Optional[Supplier] = None
     vector: Optional[Vector] = None
     driver: Optional[Driver] = None
     vehicle: Optional[Vehicle] = None
@@ -37,8 +39,8 @@ class Access(BaseModel):
     in_out: List[InOut] = []
 
 class AddAccessDTO(BaseModel):
-    typeSubject: str = "CUSTOMER"
-    subject: SubjectDataDTO = SubjectDataDTO(**{})
+    customer: CustomerDataDTO = CustomerDataDTO(**{})
+    supplier: SupplierDataDTO = SupplierDataDTO(**{})
     vector: VectorDataDTO = VectorDataDTO(**{})
     driver: DriverDataDTO = DriverDataDTO(**{})
     vehicle: VehicleDataDTO = VehicleDataDTO(**{})
@@ -51,12 +53,6 @@ class AddAccessDTO(BaseModel):
     permanent: Optional[bool] = False
     hidden: Optional[bool] = False
     mode: str = "STANDARD"
-
-    @validator('typeSubject', pre=True, always=True)
-    def check_type_subject(cls, v, values):
-        if v in ["CUSTOMER", "SUPPLIER"]:
-            return v
-        raise ValueError("typeSubject is not a valid string")
 
     @validator('type', pre=True, always=True)
     def check_type_type(cls, v, values):
@@ -71,8 +67,8 @@ class AddAccessDTO(BaseModel):
         raise ValueError("mode is not a valid string")
 
 class SetAccessDTO(BaseModel):
-    typeSubject: Optional[str] = None
-    subject: SubjectDataDTO = SubjectDataDTO(**{})
+    customer: CustomerDataDTO = CustomerDataDTO(**{})
+    supplier: SupplierDataDTO = SupplierDataDTO(**{})
     vector: VectorDataDTO = VectorDataDTO(**{})
     driver: DriverDataDTO = DriverDataDTO(**{})
     vehicle: VehicleDataDTO = VehicleDataDTO(**{})
@@ -86,15 +82,6 @@ class SetAccessDTO(BaseModel):
     permanent: Optional[bool] = None
     close: Optional[bool] = None
     mode: Optional[str] = None
-
-    @validator('typeSubject', pre=True, always=True)
-    def check_type_subject(cls, v, values):
-        if v:
-            if v in ["CUSTOMER", "SUPPLIER"]:
-                return v
-            else:
-                raise ValueError("typeSubject is not a valid string")
-        return v
 
     @validator('mode', pre=True, always=True)
     def check_mode(cls, v, values):
