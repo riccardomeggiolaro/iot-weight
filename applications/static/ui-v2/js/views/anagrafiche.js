@@ -29,8 +29,8 @@ const ENTITIES = {
     title: r => r.social_reason,
     fields: [
       { key: 'social_reason', label: 'Ragione sociale', required: true, filter: true },
+      { key: 'description', label: 'Descrizione', filter: true },
       { key: 'code', label: 'Codice', filter: true, hint: 'codice nel gestionale' },
-      { key: 'cfpiva', label: 'CF / P.IVA', upper: true, filter: true },
     ],
     upload: true,
   },
@@ -39,8 +39,8 @@ const ENTITIES = {
     title: r => r.social_reason,
     fields: [
       { key: 'social_reason', label: 'Ragione sociale', required: true, filter: true },
+      { key: 'description', label: 'Descrizione', filter: true },
       { key: 'code', label: 'Codice', filter: true, hint: 'codice nel gestionale' },
-      { key: 'cfpiva', label: 'CF / P.IVA', upper: true, filter: true },
     ],
     upload: true,
   },
@@ -49,8 +49,8 @@ const ENTITIES = {
     title: r => r.social_reason,
     fields: [
       { key: 'social_reason', label: 'Ragione sociale', required: true, filter: true },
+      { key: 'description', label: 'Descrizione', filter: true },
       { key: 'code', label: 'Codice', filter: true, hint: 'codice nel gestionale' },
-      { key: 'cfpiva', label: 'CF / P.IVA', upper: true, filter: true },
     ],
     upload: true,
   },
@@ -68,7 +68,8 @@ const ENTITIES = {
     title: r => r.social_reason,
     fields: [
       { key: 'social_reason', label: 'Nome e cognome', required: true, filter: true },
-      { key: 'telephone', label: 'Telefono', type: 'tel', filter: true },
+      { key: 'description', label: 'Descrizione', filter: true },
+      { key: 'code', label: 'Codice', filter: true, hint: 'codice nel gestionale' },
     ],
     upload: true,
   },

@@ -394,9 +394,7 @@ async function loadItems(anagrafic, filterField, inputValue, containerId, onItem
             let secondaryText = '';
 
             if (anagrafic === 'vehicle' && item.description) secondaryText = item.description;
-            else if ((anagrafic === 'customer' || anagrafic === 'supplier') && item.cfpiva) secondaryText = item.cfpiva;
-            else if (anagrafic === 'vector' && item.cfpiva) secondaryText = item.cfpiva;
-            else if (anagrafic === 'driver' && item.telephone) secondaryText = item.telephone;
+            else if (['customer', 'supplier', 'vector', 'driver'].includes(anagrafic) && item.description) secondaryText = item.description;
 
             li.innerHTML = `<span>${mainText}</span>${secondaryText ? `<span class="secondary">${secondaryText}</span>` : ''}`;
 

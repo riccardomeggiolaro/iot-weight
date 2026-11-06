@@ -83,10 +83,10 @@ class DataRouter(CallbackWeigher):
 		# In_out-level data (priority over access)
 		io_data = {
 			"material": {"id": None, "description": None},
-			"customer": {"id": None, "social_reason": None, "code": None, "cfpiva": None},
-			"supplier": {"id": None, "social_reason": None, "code": None, "cfpiva": None},
-			"vector": {"id": None, "social_reason": None, "code": None, "cfpiva": None},
-			"driver": {"id": None, "social_reason": None, "telephone": None},
+			"customer": {"id": None, "social_reason": None, "code": None, "description": None},
+			"supplier": {"id": None, "social_reason": None, "code": None, "description": None},
+			"vector": {"id": None, "social_reason": None, "code": None, "description": None},
+			"driver": {"id": None, "social_reason": None, "code": None, "description": None},
 			"note": None,
 			"document_reference": None,
 		}
@@ -109,13 +109,13 @@ class DataRouter(CallbackWeigher):
 					if lio.idMaterial and lio.material:
 						io_data["material"] = {"id": lio.material.id, "description": lio.material.description}
 					if lio.idCustomer and lio.customer:
-						io_data["customer"] = {"id": lio.customer.id, "social_reason": lio.customer.social_reason, "code": lio.customer.code, "cfpiva": lio.customer.cfpiva}
+						io_data["customer"] = {"id": lio.customer.id, "social_reason": lio.customer.social_reason, "code": lio.customer.code, "description": lio.customer.description}
 					if lio.idSupplier and lio.supplier:
-						io_data["supplier"] = {"id": lio.supplier.id, "social_reason": lio.supplier.social_reason, "code": lio.supplier.code, "cfpiva": lio.supplier.cfpiva}
+						io_data["supplier"] = {"id": lio.supplier.id, "social_reason": lio.supplier.social_reason, "code": lio.supplier.code, "description": lio.supplier.description}
 					if lio.idVector and lio.vector:
-						io_data["vector"] = {"id": lio.vector.id, "social_reason": lio.vector.social_reason, "code": lio.vector.code, "cfpiva": lio.vector.cfpiva}
+						io_data["vector"] = {"id": lio.vector.id, "social_reason": lio.vector.social_reason, "code": lio.vector.code, "description": lio.vector.description}
 					if lio.idDriver and lio.driver:
-						io_data["driver"] = {"id": lio.driver.id, "social_reason": lio.driver.social_reason, "telephone": lio.driver.telephone}
+						io_data["driver"] = {"id": lio.driver.id, "social_reason": lio.driver.social_reason, "code": lio.driver.code, "description": lio.driver.description}
 					io_data["note"] = lio.note
 					io_data["document_reference"] = lio.document_reference
 			if not last_in_out_open:
@@ -123,13 +123,13 @@ class DataRouter(CallbackWeigher):
 				if access.idMaterial and access.material:
 					io_data["material"] = {"id": access.material.id, "description": access.material.description}
 				if access.idCustomer and access.customer:
-					io_data["customer"] = {"id": access.customer.id, "social_reason": access.customer.social_reason, "code": access.customer.code, "cfpiva": access.customer.cfpiva}
+					io_data["customer"] = {"id": access.customer.id, "social_reason": access.customer.social_reason, "code": access.customer.code, "description": access.customer.description}
 				if access.idSupplier and access.supplier:
-					io_data["supplier"] = {"id": access.supplier.id, "social_reason": access.supplier.social_reason, "code": access.supplier.code, "cfpiva": access.supplier.cfpiva}
+					io_data["supplier"] = {"id": access.supplier.id, "social_reason": access.supplier.social_reason, "code": access.supplier.code, "description": access.supplier.description}
 				if access.idVector and access.vector:
-					io_data["vector"] = {"id": access.vector.id, "social_reason": access.vector.social_reason, "code": access.vector.code, "cfpiva": access.vector.cfpiva}
+					io_data["vector"] = {"id": access.vector.id, "social_reason": access.vector.social_reason, "code": access.vector.code, "description": access.vector.description}
 				if access.idDriver and access.driver:
-					io_data["driver"] = {"id": access.driver.id, "social_reason": access.driver.social_reason, "telephone": access.driver.telephone}
+					io_data["driver"] = {"id": access.driver.id, "social_reason": access.driver.social_reason, "code": access.driver.code, "description": access.driver.description}
 				io_data["note"] = access.note
 				io_data["document_reference"] = access.document_reference
 		if tare != "0" and data_dto.id_selected.id not in [-1, None] and weight1:
@@ -188,24 +188,24 @@ class DataRouter(CallbackWeigher):
 					if lio.idMaterial and lio.material:
 						io_data["material"] = {"id": lio.material.id, "description": lio.material.description}
 					if lio.idCustomer and lio.customer:
-						io_data["customer"] = {"id": lio.customer.id, "social_reason": lio.customer.social_reason, "code": lio.customer.code, "cfpiva": lio.customer.cfpiva}
+						io_data["customer"] = {"id": lio.customer.id, "social_reason": lio.customer.social_reason, "code": lio.customer.code, "description": lio.customer.description}
 					if lio.idSupplier and lio.supplier:
-						io_data["supplier"] = {"id": lio.supplier.id, "social_reason": lio.supplier.social_reason, "code": lio.supplier.code, "cfpiva": lio.supplier.cfpiva}
+						io_data["supplier"] = {"id": lio.supplier.id, "social_reason": lio.supplier.social_reason, "code": lio.supplier.code, "description": lio.supplier.description}
 					if lio.idVector and lio.vector:
-						io_data["vector"] = {"id": lio.vector.id, "social_reason": lio.vector.social_reason, "code": lio.vector.code, "cfpiva": lio.vector.cfpiva}
+						io_data["vector"] = {"id": lio.vector.id, "social_reason": lio.vector.social_reason, "code": lio.vector.code, "description": lio.vector.description}
 					if lio.idDriver and lio.driver:
-						io_data["driver"] = {"id": lio.driver.id, "social_reason": lio.driver.social_reason, "telephone": lio.driver.telephone}
+						io_data["driver"] = {"id": lio.driver.id, "social_reason": lio.driver.social_reason, "code": lio.driver.code, "description": lio.driver.description}
 			elif access_for_weight:
 				if access_for_weight.idMaterial and access_for_weight.material:
 					io_data["material"] = {"id": access_for_weight.material.id, "description": access_for_weight.material.description}
 				if access_for_weight.idCustomer and access_for_weight.customer:
-					io_data["customer"] = {"id": access_for_weight.customer.id, "social_reason": access_for_weight.customer.social_reason, "code": access_for_weight.customer.code, "cfpiva": access_for_weight.customer.cfpiva}
+					io_data["customer"] = {"id": access_for_weight.customer.id, "social_reason": access_for_weight.customer.social_reason, "code": access_for_weight.customer.code, "description": access_for_weight.customer.description}
 				if access_for_weight.idSupplier and access_for_weight.supplier:
-					io_data["supplier"] = {"id": access_for_weight.supplier.id, "social_reason": access_for_weight.supplier.social_reason, "code": access_for_weight.supplier.code, "cfpiva": access_for_weight.supplier.cfpiva}
+					io_data["supplier"] = {"id": access_for_weight.supplier.id, "social_reason": access_for_weight.supplier.social_reason, "code": access_for_weight.supplier.code, "description": access_for_weight.supplier.description}
 				if access_for_weight.idVector and access_for_weight.vector:
-					io_data["vector"] = {"id": access_for_weight.vector.id, "social_reason": access_for_weight.vector.social_reason, "code": access_for_weight.vector.code, "cfpiva": access_for_weight.vector.cfpiva}
+					io_data["vector"] = {"id": access_for_weight.vector.id, "social_reason": access_for_weight.vector.social_reason, "code": access_for_weight.vector.code, "description": access_for_weight.vector.description}
 				if access_for_weight.idDriver and access_for_weight.driver:
-					io_data["driver"] = {"id": access_for_weight.driver.id, "social_reason": access_for_weight.driver.social_reason, "telephone": access_for_weight.driver.telephone}
+					io_data["driver"] = {"id": access_for_weight.driver.id, "social_reason": access_for_weight.driver.social_reason, "code": access_for_weight.driver.code, "description": access_for_weight.driver.description}
 		updated = None
 		if id_selected:
 			if type_current_access != TypeAccess.MANUALLY.name and (data_dto.id_selected.id is None or keep_selected):
@@ -270,17 +270,17 @@ class DataRouter(CallbackWeigher):
 						refreshed = True
 						lio = updated_access.in_out[-1]
 						io_data["material"] = {"id": lio.material.id, "description": lio.material.description} if lio.idMaterial and lio.material else {"id": None, "description": None}
-						io_data["customer"] = {"id": lio.customer.id, "social_reason": lio.customer.social_reason, "code": lio.customer.code, "cfpiva": lio.customer.cfpiva} if lio.idCustomer and lio.customer else {"id": None, "social_reason": None, "code": None, "cfpiva": None}
-						io_data["supplier"] = {"id": lio.supplier.id, "social_reason": lio.supplier.social_reason, "code": lio.supplier.code, "cfpiva": lio.supplier.cfpiva} if lio.idSupplier and lio.supplier else {"id": None, "social_reason": None, "code": None, "cfpiva": None}
-						io_data["vector"] = {"id": lio.vector.id, "social_reason": lio.vector.social_reason, "code": lio.vector.code, "cfpiva": lio.vector.cfpiva} if lio.idVector and lio.vector else {"id": None, "social_reason": None, "code": None, "cfpiva": None}
-						io_data["driver"] = {"id": lio.driver.id, "social_reason": lio.driver.social_reason, "telephone": lio.driver.telephone} if lio.idDriver and lio.driver else {"id": None, "social_reason": None, "telephone": None}
+						io_data["customer"] = {"id": lio.customer.id, "social_reason": lio.customer.social_reason, "code": lio.customer.code, "description": lio.customer.description} if lio.idCustomer and lio.customer else {"id": None, "social_reason": None, "code": None, "description": None}
+						io_data["supplier"] = {"id": lio.supplier.id, "social_reason": lio.supplier.social_reason, "code": lio.supplier.code, "description": lio.supplier.description} if lio.idSupplier and lio.supplier else {"id": None, "social_reason": None, "code": None, "description": None}
+						io_data["vector"] = {"id": lio.vector.id, "social_reason": lio.vector.social_reason, "code": lio.vector.code, "description": lio.vector.description} if lio.idVector and lio.vector else {"id": None, "social_reason": None, "code": None, "description": None}
+						io_data["driver"] = {"id": lio.driver.id, "social_reason": lio.driver.social_reason, "code": lio.driver.code, "description": lio.driver.description} if lio.idDriver and lio.driver else {"id": None, "social_reason": None, "code": None, "description": None}
 						io_data_from_in_out = True
 					if not refreshed:
 						io_data["material"] = {"id": updated_access.material.id, "description": updated_access.material.description} if updated_access.idMaterial and updated_access.material else {"id": None, "description": None}
-						io_data["customer"] = {"id": updated_access.customer.id, "social_reason": updated_access.customer.social_reason, "code": updated_access.customer.code, "cfpiva": updated_access.customer.cfpiva} if updated_access.idCustomer and updated_access.customer else {"id": None, "social_reason": None, "code": None, "cfpiva": None}
-						io_data["supplier"] = {"id": updated_access.supplier.id, "social_reason": updated_access.supplier.social_reason, "code": updated_access.supplier.code, "cfpiva": updated_access.supplier.cfpiva} if updated_access.idSupplier and updated_access.supplier else {"id": None, "social_reason": None, "code": None, "cfpiva": None}
-						io_data["vector"] = {"id": updated_access.vector.id, "social_reason": updated_access.vector.social_reason, "code": updated_access.vector.code, "cfpiva": updated_access.vector.cfpiva} if updated_access.idVector and updated_access.vector else {"id": None, "social_reason": None, "code": None, "cfpiva": None}
-						io_data["driver"] = {"id": updated_access.driver.id, "social_reason": updated_access.driver.social_reason, "telephone": updated_access.driver.telephone} if updated_access.idDriver and updated_access.driver else {"id": None, "social_reason": None, "telephone": None}
+						io_data["customer"] = {"id": updated_access.customer.id, "social_reason": updated_access.customer.social_reason, "code": updated_access.customer.code, "description": updated_access.customer.description} if updated_access.idCustomer and updated_access.customer else {"id": None, "social_reason": None, "code": None, "description": None}
+						io_data["supplier"] = {"id": updated_access.supplier.id, "social_reason": updated_access.supplier.social_reason, "code": updated_access.supplier.code, "description": updated_access.supplier.description} if updated_access.idSupplier and updated_access.supplier else {"id": None, "social_reason": None, "code": None, "description": None}
+						io_data["vector"] = {"id": updated_access.vector.id, "social_reason": updated_access.vector.social_reason, "code": updated_access.vector.code, "description": updated_access.vector.description} if updated_access.idVector and updated_access.vector else {"id": None, "social_reason": None, "code": None, "description": None}
+						io_data["driver"] = {"id": updated_access.driver.id, "social_reason": updated_access.driver.social_reason, "code": updated_access.driver.code, "description": updated_access.driver.description} if updated_access.idDriver and updated_access.driver else {"id": None, "social_reason": None, "code": None, "description": None}
 				data = json.dumps({"id": id_selected})
 				await self.broadcastUpdateAnagrafic("access", {"access": data})
 		if data_dto.id_selected.id:
@@ -292,24 +292,24 @@ class DataRouter(CallbackWeigher):
 						"id": access.customer.id if access.customer else None,
 						"social_reason": access.customer.social_reason if access.customer else None,
 						"code": access.customer.code if access.customer else None,
-						"cfpiva": access.customer.cfpiva if access.customer else None
+						"description": access.customer.description if access.customer else None
 					},
 					"supplier": io_data["supplier"] if io_data["supplier"]["id"] else {
 						"id": access.supplier.id if access.supplier else None,
 						"social_reason": access.supplier.social_reason if access.supplier else None,
 						"code": access.supplier.code if access.supplier else None,
-						"cfpiva": access.supplier.cfpiva if access.supplier else None
+						"description": access.supplier.description if access.supplier else None
 					},
 					"vector": io_data["vector"] if io_data["vector"]["id"] else {
 						"id": access.vector.id if access.vector else None,
 						"social_reason": access.vector.social_reason if access.vector else None,
 						"code": access.vector.code if access.vector else None,
-						"cfpiva": access.vector.cfpiva if access.vector else None
+						"description": access.vector.description if access.vector else None
 					},
 					"driver": io_data["driver"] if io_data["driver"]["id"] else {
 						"id": access.driver.id if access.driver else None,
 						"social_reason": access.driver.social_reason if access.driver else None,
-						"telephone": access.driver.telephone if access.driver else None,
+						"code": access.driver.code if access.driver else None, "description": access.driver.description if access.driver else None,
 					},
 					"vehicle": {
 						"id": access.vehicle.id if access.vehicle else None,

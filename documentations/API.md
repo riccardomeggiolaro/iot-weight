@@ -101,16 +101,16 @@ POST /{prefisso}
 ```
 Richiede permessi di scrittura.
 
-#### Cliente (`/api/anagrafic/customer`), Fornitore (`/api/anagrafic/supplier`), Vettore (`/api/anagrafic/vector`)
+#### Cliente (`/api/anagrafic/customer`), Fornitore (`/api/anagrafic/supplier`), Vettore (`/api/anagrafic/vector`), Autista (`/api/anagrafic/driver`)
 ```json
 {
   "social_reason": "Ragione Sociale Srl",
-  "code": "C001",
-  "cfpiva": "12345678901"
+  "description": "Testo libero",
+  "code": "C001"
 }
 ```
-> `social_reason` è obbligatoria e unica. `code` è il codice del record nel gestionale: facoltativo, unico se presente.
-> `cfpiva` è facoltativo e può ripetersi (es. più sedi della stessa società).
+> `social_reason` è obbligatoria (per gli autisti è nome e cognome; per clienti, fornitori e vettori è unica).
+> `description` è un testo libero facoltativo. `code` è il codice del record nel gestionale: facoltativo, unico se presente.
 
 #### Veicolo (`/api/anagrafic/vehicle`)
 ```json
@@ -121,14 +121,6 @@ Richiede permessi di scrittura.
 }
 ```
 > `tare` è in kg e deve essere > 0.
-
-#### Autista
-```json
-{
-  "social_reason": "Nome Cognome",
-  "telephone": "0123456789"
-}
-```
 
 #### Materiale
 ```json
@@ -216,8 +208,8 @@ Richiede permessi di scrittura. La **targa è obbligatoria** (tramite `vehicle.p
   "customer": {
     "id": 1,
     "social_reason": "Cliente Srl",
-    "code": "C001",
-    "cfpiva": "12345678901"
+    "description": "Sede di Vicenza",
+    "code": "C001"
   },
   "supplier": {
     "id": null,
@@ -338,7 +330,7 @@ GET /api/anagrafic/access/in-out/list
 | `plate`, `customer_name`, `supplier_name`, `vector_name`, `material_description`, … | string | Filtri sui dati della pesata (`%` per ricerca parziale) |
 
 Ogni pesata contiene una **copia dei dati anagrafici al momento della pesata** (`plate`, `vehicle_description`,
-`customer_name`/`_code`/`_cfpiva`, `supplier_*`, `vector_*`, `driver_name`, `driver_telephone`,
+`customer_name`/`_code`/`_description`, `supplier_*`, `vector_*`, `driver_name`/`_code`/`_description`,
 `material_description`, `material_code`, `card_number`, `card_code`). Stampe, export, CSV e sincronizzazione usano
 questi campi: se in seguito un'anagrafica viene rinominata o archiviata, la pesata resta com'era.
 La copia viene aggiornata se si modificano i dati della pesata e si fissa alla seconda pesata.

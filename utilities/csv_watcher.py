@@ -47,36 +47,30 @@ logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Formato CSV (separatore ;, senza header, una pesata per riga)
-# ---------------------------------------------------------------------------
-#   0  tipo_soggetto              (ignorato)
-#   1  id_soggetto                (ignorato)
-#   2  ragione_sociale_soggetto   (ignorato)
-#   3  cell_soggetto              (ignorato)
-#   4  cfpiva_soggetto            (ignorato)
-#   5  id_vettore                 (ignorato)
-#   6  ragione_sociale_vettore    (ignorato)
-#   7  cell_vettore               (ignorato)
-#   8  cfpiva_vettore             (ignorato)
-#   9  id_autista                 (ignorato)
-#  10  ragione_sociale_autista    (ignorato)
-#  11  cell_autista               (ignorato)
-#  12  id_tessera                 (ignorato)
-#  13  numero_tessera             → CLIENTE1
-#  14  codice_tessera             → DESCR
-#  15  id_veicolo                 (ignorato)
-#  16  targa_veicolo              (ignorato)
-#  17  descrizione_veicolo        (ignorato)
-#  18  id_materiale               (ignorato)
-#  19  descrizione_materiale      (ignorato)
-#  20  note                       (ignorato)
-#  21  referenza_documento        (ignorato)
-#  22  data1 (DD/MM/YYYY HH:MM)   → DATA1 + ORA1
-#  23  pid1                       → CK1 = <pesa>-<pid1>
-#  24  peso1                      → PESO1
-#  25  data2 (DD/MM/YYYY HH:MM)   → DATA2 + ORA2
-#  26  pid2                       → CK2 = <pesa>-<pid2>
-#  27  peso2                      → PESO2
-#  28  netto                      → NETTO (solo uscita)
+# Sono riconosciuti due formati, in base al numero di colonne:
+#
+# Formato attuale (34 colonne): clienti e fornitori separati, codici del gestionale
+#   0- 3  cliente:   id, ragione sociale, codice, descrizione        (ignorati)
+#   4- 7  fornitore: id, ragione sociale, codice, descrizione        (ignorati)
+#   8-11  vettore:   id, ragione sociale, codice, descrizione        (ignorati)
+#  12-15  autista:   id, nome e cognome, codice, descrizione         (ignorati)
+#  16  id_tessera                 (ignorato)
+#  17  numero_tessera             → CLIENTE1
+#  18  codice_tessera             → DESCR
+#  19-21  veicolo: id, targa, descrizione                           (ignorati)
+#  22-24  materiale: id, descrizione, codice                        (ignorati)
+#  25  note                       (ignorato)
+#  26  referenza_documento        (ignorato)
+#  27  data1 (DD/MM/YYYY HH:MM)   → DATA1 + ORA1
+#  28  pid1                       → CK1 = <pesa>-<pid1>
+#  29  peso1                      → PESO1
+#  30  data2 (DD/MM/YYYY HH:MM)   → DATA2 + ORA2
+#  31  pid2                       → CK2 = <pesa>-<pid2>
+#  32  peso2                      → PESO2
+#  33  netto                      → NETTO (solo uscita)
+#
+# Formato precedente (29 colonne): soggetto unico (tipo, id, ragione sociale, telefono, CF/P.IVA),
+#   vettore e autista con telefono; tessera in 13/14, date/pid/pesi da 22 a 28.
 #
 # <pesa> = prefisso del nome file fino al primo '_'
 #   entrata: <pesa1>_<pid1>.csv        → CK1 = <pesa1>-<pid1>
@@ -87,15 +81,20 @@ logger = logging.getLogger(__name__)
 #        'M' se è solo un'uscita con tara (data1 e pid1 vuoti, peso1 = tara)
 # ID   = MAX(ID)+1 (con retry in caso di collisione)
 # ---------------------------------------------------------------------------
-IDX_NUMERO_TESSERA = 13
-IDX_CODICE_TESSERA = 14
-IDX_DATA1  = 22
-IDX_PID1   = 23
-IDX_PESO1  = 24
-IDX_DATA2  = 25
-IDX_PID2   = 26
-IDX_PESO2  = 27
-IDX_NETTO  = 28
+LAYOUT_CURRENT = {
+    "NUMERO_TESSERA": 17, "CODICE_TESSERA": 18,
+    "DATA1": 27, "PID1": 28, "PESO1": 29, "DATA2": 30, "PID2": 31, "PESO2": 32, "NETTO": 33,
+}
+LAYOUT_LEGACY = {
+    "NUMERO_TESSERA": 13, "CODICE_TESSERA": 14,
+    "DATA1": 22, "PID1": 23, "PESO1": 24, "DATA2": 25, "PID2": 26, "PESO2": 27, "NETTO": 28,
+}
+COLUMNS_CURRENT = 34
+
+
+def csv_layout(fields: list) -> dict:
+    """Formato della riga: attuale (34 colonne) o precedente (29 colonne)."""
+    return LAYOUT_CURRENT if len(fields) >= COLUMNS_CURRENT else LAYOUT_LEGACY
 
 # Lunghezze di default se non ricavabili dal dizionario dati
 DEFAULT_LEN = {"CLIENTE1": 60, "DESCR": 15, "CK1": 30, "CK2": 30}
@@ -206,24 +205,27 @@ def make_ck(weigher: str, pid: str) -> str:
 
 def row_to_record(fields: list, weigher: str) -> dict:
     """Converte la riga CSV nei valori delle colonne di ARCHIVIO."""
-    def f(idx):
+    layout = csv_layout(fields)
+
+    def f(name):
+        idx = layout[name]
         return fields[idx].strip() if idx < len(fields) else ""
 
-    dt1 = parse_datetime(f(IDX_DATA1))
-    dt2 = parse_datetime(f(IDX_DATA2))
-    peso1 = to_num(f(IDX_PESO1))
-    peso2 = to_num(f(IDX_PESO2))
+    dt1 = parse_datetime(f("DATA1"))
+    dt2 = parse_datetime(f("DATA2"))
+    peso1 = to_num(f("PESO1"))
+    peso2 = to_num(f("PESO2"))
 
     is_uscita = peso2 is not None or dt2 is not None
 
     netto = None
     if is_uscita:
-        netto = to_num(f(IDX_NETTO))
+        netto = to_num(f("NETTO"))
         if netto is None and peso1 is not None and peso2 is not None:
             netto = abs(peso1 - peso2)
 
-    pid1 = f(IDX_PID1)
-    pid2 = f(IDX_PID2)
+    pid1 = f("PID1")
+    pid2 = f("PID2")
 
     # Pesata con tara: nel CSV peso1 contiene la tara, data1 e pid1 sono vuoti
     is_tara = is_uscita and not pid1 and dt1 is None
@@ -233,8 +235,8 @@ def row_to_record(fields: list, weigher: str) -> dict:
         "pid1": pid1,
         "values": {
             "TIPO":     TIPO_TARA if is_tara else TIPO_PESATA,
-            "CLIENTE1": cut("CLIENTE1", f(IDX_NUMERO_TESSERA)),
-            "DESCR":    cut("DESCR", f(IDX_CODICE_TESSERA)),
+            "CLIENTE1": cut("CLIENTE1", f("NUMERO_TESSERA")),
+            "DESCR":    cut("DESCR", f("CODICE_TESSERA")),
             "DATA1":    adapt_date("DATA1", dt1),
             "ORA1":     adapt_time("ORA1", dt1),
             # All'uscita la pesa della 1a pesata non è nota: in caso di

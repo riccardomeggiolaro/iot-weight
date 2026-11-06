@@ -3,12 +3,12 @@ from typing import Optional, List
 from modules.md_database.functions.get_data_by_id import get_data_by_id
 from datetime import datetime
 
-# Anagrafica fornitori: ragione sociale (obbligatoria), codice del gestionale, CF/P.IVA.
+# Anagrafica fornitori: ragione sociale (obbligatoria), descrizione e codice del gestionale.
 
 class Supplier(BaseModel):
 	social_reason: Optional[str] = None
 	code: Optional[str] = None
-	cfpiva: Optional[str] = None
+	description: Optional[str] = None
 	archived: Optional[bool] = False
 	date_created: Optional[datetime] = None
 	reservations: List[any] = []
@@ -21,7 +21,7 @@ class Supplier(BaseModel):
 class SupplierDataDTO(BaseModel):
 	social_reason: Optional[str] = None
 	code: Optional[str] = None
-	cfpiva: Optional[str] = None
+	description: Optional[str] = None
 	id: Optional[int] = None
 
 	@validator('id', pre=True, always=True)
@@ -34,7 +34,7 @@ class SupplierDataDTO(BaseModel):
 class SupplierDTO(BaseModel):
 	social_reason: Optional[str] = None
 	code: Optional[str] = None
-	cfpiva: Optional[str] = None
+	description: Optional[str] = None
 	id: Optional[int] = None
 
 	@validator('id', pre=True, always=True)
@@ -46,7 +46,7 @@ class SupplierDTO(BaseModel):
 			else:
 				values['social_reason'] = data.get('social_reason')
 				values['code'] = data.get('code')
-				values['cfpiva'] = data.get('cfpiva')
+				values['description'] = data.get('description')
 		return v
 
 	class Config:
@@ -56,7 +56,7 @@ class SupplierDTO(BaseModel):
 class AddSupplierDTO(BaseModel):
 	social_reason: str
 	code: Optional[str] = None
-	cfpiva: Optional[str] = None
+	description: Optional[str] = None
 
 	@field_validator('*', mode='before')
 	@classmethod
@@ -68,15 +68,15 @@ class AddSupplierDTO(BaseModel):
 class SetSupplierDTO(BaseModel):
 	social_reason: Optional[str] = None
 	code: Optional[str] = None
-	cfpiva: Optional[str] = None
+	description: Optional[str] = None
 
 	@root_validator(pre=True)
 	def check_at_least_one_field(cls, values):
-		if not values.get('social_reason') and not values.get('code') and not values.get('cfpiva'):
-			raise ValueError('At least one of "social_reason", "code" or "cfpiva" must be provided.')
+		if not values.get('social_reason') and not values.get('code') and not values.get('description'):
+			raise ValueError('At least one of "social_reason", "code" or "description" must be provided.')
 		return values
 
 class FilterSupplierDTO(BaseModel):
 	social_reason: Optional[str] = None
 	code: Optional[str] = None
-	cfpiva: Optional[str] = None
+	description: Optional[str] = None
