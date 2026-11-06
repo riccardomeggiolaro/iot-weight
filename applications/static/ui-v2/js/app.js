@@ -8,6 +8,7 @@ import { renderImpianto } from './views/impianto.js';
 import { renderPlaceholder } from './views/placeholder.js';
 import { renderAnagrafiche } from './views/anagrafiche.js';
 import { renderPrenotazioni, renderPesate } from './views/prenotazioni.js';
+import { renderImpostazioni } from './views/impostazioni.js';
 
 if (!getToken()) logout();
 
@@ -18,7 +19,7 @@ const ROUTES = {
   anagrafiche:  { title: 'Anagrafiche',  render: renderAnagrafiche },
   impianto:     { title: 'Impianto',     render: renderImpianto },
   report:       { title: 'Report',       render: el => renderPlaceholder(el, '📊', 'Report', 'Statistiche, esportazioni e modelli di stampa.') },
-  impostazioni: { title: 'Impostazioni', render: el => renderPlaceholder(el, '⚙️', 'Impostazioni', 'Configurazione guidata di pese, terminali, relè, fotocamere, stampanti e utenti.') },
+  impostazioni: { title: 'Impostazioni', render: renderImpostazioni },
 };
 
 const view = document.getElementById('view');
@@ -56,7 +57,8 @@ function renderStatus() {
   });
   const relays = plant.weighers.flatMap(w => Object.entries(w.relays).map(([n, v]) =>
     `<span class="chip ${v === 1 ? 'ok' : 'err'}" title="Relè ${esc(n)} di ${esc(w.name)}"><span class="dot"></span>Sbarra ${esc(n)} ${v === 1 ? 'aperta' : 'chiusa'}</span>`));
-  const mode = plant.config ? `<span class="chip ${plant.isAutomatic ? 'ok' : ''}"><span class="dot"></span>${plant.isAutomatic ? 'Automatico' : 'Manuale'}</span>` : '';
+  const modeLabel = { AUTOMATIC: 'Automatico', SEMIAUTOMATIC: 'Semiautomatico' }[plant.mode] || 'Manuale';
+  const mode = plant.config ? `<span class="chip ${plant.isAutomatic ? 'ok' : ''}"><span class="dot"></span>${modeLabel}</span>` : '';
   strip.innerHTML = mode + chips.join('') + relays.join('');
 }
 let statusQueued = false;
