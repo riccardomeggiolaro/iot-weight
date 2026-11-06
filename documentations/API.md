@@ -85,6 +85,7 @@ GET /{prefisso}/list
 | `offset` | int | Offset per paginazione |
 | `order_by` | string | Campo su cui ordinare |
 | `order_direction` | string | `asc` o `desc` |
+| `archived` | bool | `false` (default): solo anagrafiche attive; `true`: solo quelle archiviate |
 
 **Risposta:**
 ```json
@@ -100,14 +101,16 @@ POST /{prefisso}
 ```
 Richiede permessi di scrittura.
 
-#### Cliente (`/api/anagrafic/customer`) e Fornitore (`/api/anagrafic/supplier`)
+#### Cliente (`/api/anagrafic/customer`), Fornitore (`/api/anagrafic/supplier`), Vettore (`/api/anagrafic/vector`)
 ```json
 {
   "social_reason": "Ragione Sociale Srl",
-  "telephone": "0123456789",
+  "code": "C001",
   "cfpiva": "12345678901"
 }
 ```
+> `social_reason` è obbligatoria e unica. `code` è il codice del record nel gestionale: facoltativo, unico se presente.
+> `cfpiva` è facoltativo e può ripetersi (es. più sedi della stessa società).
 
 #### Veicolo (`/api/anagrafic/vehicle`)
 ```json
@@ -119,19 +122,19 @@ Richiede permessi di scrittura.
 ```
 > `tare` è in kg e deve essere > 0.
 
-#### Autista / Vettore / Operatore
+#### Autista
 ```json
 {
   "social_reason": "Nome Cognome",
-  "telephone": "0123456789",
-  "cfpiva": "XXXXXX"
+  "telephone": "0123456789"
 }
 ```
 
 #### Materiale
 ```json
 {
-  "description": "Ghiaia"
+  "description": "Ghiaia",
+  "code": "M001"
 }
 ```
 
@@ -145,7 +148,16 @@ Richiede permessi di scrittura. Stessa struttura del body di creazione, tutti i 
 ```
 DELETE /{prefisso}/{id}
 ```
-Richiede permessi di scrittura.
+Richiede permessi di scrittura. Se il record non è mai stato usato in prenotazioni o pesate viene eliminato;
+altrimenti viene **archiviato** (`"archived": true` nella risposta): sparisce dagli elenchi e dai suggerimenti
+ma resta nel database per lo storico.
+
+### Ripristina
+```
+POST /{prefisso}/{id}/restore
+```
+Riporta attivo un record archiviato. Anche creare un record con lo stesso nome di uno archiviato
+(o usarne il nome in una prenotazione) lo ripristina.
 
 ### Elimina tutti
 ```
@@ -204,7 +216,7 @@ Richiede permessi di scrittura. La **targa è obbligatoria** (tramite `vehicle.p
   "customer": {
     "id": 1,
     "social_reason": "Cliente Srl",
-    "telephone": "0123456789",
+    "code": "C001",
     "cfpiva": "12345678901"
   },
   "supplier": {
@@ -323,6 +335,13 @@ GET /api/anagrafic/access/in-out/list
 | `excludeTestWeighing` | bool | Esclude pesate di test |
 | `onlyInOutWithWeight2` | bool | Solo pesate con peso 2 (complete) |
 | `onlyInOutWithoutWeight2` | bool | Solo pesate senza peso 2 (incomplete) |
+| `plate`, `customer_name`, `supplier_name`, `vector_name`, `material_description`, … | string | Filtri sui dati della pesata (`%` per ricerca parziale) |
+
+Ogni pesata contiene una **copia dei dati anagrafici al momento della pesata** (`plate`, `vehicle_description`,
+`customer_name`/`_code`/`_cfpiva`, `supplier_*`, `vector_*`, `driver_name`, `driver_telephone`,
+`material_description`, `material_code`, `card_number`, `card_code`). Stampe, export, CSV e sincronizzazione usano
+questi campi: se in seguito un'anagrafica viene rinominata o archiviata, la pesata resta com'era.
+La copia viene aggiornata se si modificano i dati della pesata e si fissa alla seconda pesata.
 
 **Risposta:**
 ```json

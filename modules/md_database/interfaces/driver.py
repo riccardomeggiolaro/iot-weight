@@ -6,6 +6,7 @@ from datetime import datetime
 class Driver(BaseModel):
 	social_reason:  Optional[str] = None
 	telephone: Optional[str] = None
+	archived: Optional[bool] = False
 	date_created: Optional[datetime] = None
 	reservations: List[any] = []
 	id: Optional[int] = None

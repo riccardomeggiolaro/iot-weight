@@ -9,6 +9,7 @@ class Vehicle(BaseModel):
 	description: Optional[str] = None
 	tare: Optional[Union[int, float]] = None
 	max_threshold: Optional[int] = None
+	archived: Optional[bool] = False
 	date_created: Optional[datetime] = None
 	reservations: List[any] = []
 	id: Optional[int] = None

@@ -1,4 +1,5 @@
 from modules.md_database.md_database import SessionLocal, Customer, Supplier, Vector, Driver, Vehicle, Material, Access, AccessStatus, TypeAccess, AccessMode, CardRegistry
+from modules.md_database.functions.find_or_create_anagrafic import find_or_create_anagrafic
 from modules.md_database.interfaces.access import AddAccessDTO
 from modules.md_database.functions.get_access_by_vehicle_id_if_uncompete import get_access_by_vehicle_id_if_uncomplete
 from modules.md_database.functions.get_access_by_identify_if_uncomplete import get_access_by_identify_if_uncomplete
@@ -37,42 +38,36 @@ def add_access(data: AddAccessDTO, status: Optional[AccessStatus] = None):
             if not data.customer.id:
                 add_customer = {
                     "social_reason": data.customer.social_reason if data.customer.social_reason != "" else None,
-                    "telephone": data.customer.telephone if data.customer.telephone != "" else None,
+                    "code": data.customer.code if data.customer.code != "" else None,
                     "cfpiva": data.customer.cfpiva if data.customer.cfpiva != "" else None
                 }
                 if has_non_none_value(add_customer):
                     data_to_check = data.customer.dict()
-                    customer = current_model(**add_customer)
-                    session.add(customer)
-                    session.flush()
+                    customer = find_or_create_anagrafic(session, current_model, add_customer)
                     add_access["idCustomer"] = customer.id
 
             current_model = Supplier
             if not data.supplier.id:
                 add_supplier = {
                     "social_reason": data.supplier.social_reason if data.supplier.social_reason != "" else None,
-                    "telephone": data.supplier.telephone if data.supplier.telephone != "" else None,
+                    "code": data.supplier.code if data.supplier.code != "" else None,
                     "cfpiva": data.supplier.cfpiva if data.supplier.cfpiva != "" else None
                 }
                 if has_non_none_value(add_supplier):
                     data_to_check = data.supplier.dict()
-                    supplier = current_model(**add_supplier)
-                    session.add(supplier)
-                    session.flush()
+                    supplier = find_or_create_anagrafic(session, current_model, add_supplier)
                     add_access["idSupplier"] = supplier.id
 
             current_model = Vector
             if not data.vector.id:
                 add_vector = {
                     "social_reason": data.vector.social_reason if data.vector.social_reason != "" else None,
-                    "telephone": data.vector.telephone if data.vector.telephone != "" else None,
+                    "code": data.vector.code if data.vector.code != "" else None,
                     "cfpiva": data.vector.cfpiva if data.vector.cfpiva != "" else None
                 }
                 if has_non_none_value(add_vector):
                     data_to_check = data.vector.dict()
-                    vector = current_model(**add_vector)
-                    session.add(vector)
-                    session.flush()
+                    vector = find_or_create_anagrafic(session, current_model, add_vector)
                     add_access["idVector"] = vector.id
 
             current_model = Driver
@@ -83,9 +78,7 @@ def add_access(data: AddAccessDTO, status: Optional[AccessStatus] = None):
                 }
                 if has_non_none_value(add_driver):
                     data_to_check = data.driver.dict()
-                    driver = current_model(**add_driver)
-                    session.add(driver)
-                    session.flush()
+                    driver = find_or_create_anagrafic(session, current_model, add_driver)
                     add_access["idDriver"] = driver.id
             
             current_model = Vehicle
@@ -103,9 +96,7 @@ def add_access(data: AddAccessDTO, status: Optional[AccessStatus] = None):
                         add_access["idVehicle"] = existing_vehicle.id
                     else:
                         data_to_check = data.vehicle.dict()
-                        vehicle = current_model(**add_vehicle)
-                        session.add(vehicle)
-                        session.flush()
+                        vehicle = find_or_create_anagrafic(session, current_model, add_vehicle)
                         add_access["idVehicle"] = vehicle.id
 
             current_model = Material
@@ -115,9 +106,7 @@ def add_access(data: AddAccessDTO, status: Optional[AccessStatus] = None):
                 }
                 if has_non_none_value(add_material):
                     data_to_check = data.material.dict()
-                    material = current_model(**add_material)
-                    session.add(material)
-                    session.flush()
+                    material = find_or_create_anagrafic(session, current_model, add_material)
                     add_access["idMaterial"] = material.id
             else:
                 add_access["idMaterial"] = data.material.id

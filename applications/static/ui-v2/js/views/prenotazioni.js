@@ -21,12 +21,13 @@ const PESATE = { label: 'Pesate', kind: 'inout' };
 const TAB_KEYS = Object.keys(TABS);
 
 // Anagrafiche collegate a una prenotazione/pesata: chiave API, campo mostrato, etichetta
+// snap: colonna dello "stampino" della pesata (dati com'erano al momento della pesata)
 const LINKS = [
-  { key: 'customer', field: 'social_reason', label: 'Cliente', secondary: r => r.cfpiva },
-  { key: 'supplier', field: 'social_reason', label: 'Fornitore', secondary: r => r.cfpiva },
-  { key: 'vector', field: 'social_reason', label: 'Vettore', secondary: r => r.cfpiva },
-  { key: 'driver', field: 'social_reason', label: 'Autista', secondary: r => r.telephone },
-  { key: 'material', field: 'description', label: 'Materiale' },
+  { key: 'customer', field: 'social_reason', label: 'Cliente', snap: 'customer_name', secondary: r => r.code || r.cfpiva },
+  { key: 'supplier', field: 'social_reason', label: 'Fornitore', snap: 'supplier_name', secondary: r => r.code || r.cfpiva },
+  { key: 'vector', field: 'social_reason', label: 'Vettore', snap: 'vector_name', secondary: r => r.code || r.cfpiva },
+  { key: 'driver', field: 'social_reason', label: 'Autista', snap: 'driver_name', secondary: r => r.telephone },
+  { key: 'material', field: 'description', label: 'Materiale', snap: 'material_description', secondary: r => r.code },
 ];
 
 const STATUS = {
@@ -205,7 +206,7 @@ function renderSection(el, conf, tab) {
           <td>${io.weight2 ? `${esc(formatDateTime(io.weight2.date))}<br><small class="muted">${esc(io.weight2.pid || '')}</small>` : dash}</td>
           <td class="num">${io.weight2 ? esc(formatKg(io.weight2.weight)) : dash}</td>
           <td class="num"><strong>${io.net_weight != null ? esc(formatKg(io.net_weight)) + ' kg' : dash}</strong></td>
-          <td>${cell(io.material?.description)}</td>
+          <td>${cell(io.material_description ?? io.material?.description)}</td>
           <td class="dt-actions">
             ${pics.length ? `<button type="button" class="thumb-btn" data-io="${io.id}" data-access="${a.id}" data-do="img" title="Foto (${pics.length})"><img src="${esc(imgUrl(pics[0]))}" alt="Foto della pesata" loading="lazy"><span>${pics.length}</span></button>` : ''}
             ${io.weight1 || io.weight2 ? `<button type="button" class="dt-act" data-io="${io.id}" data-access="${a.id}" data-do="pdf" title="PDF della pesata" aria-label="PDF della pesata">${ICON.pdf}</button>` : ''}
@@ -369,11 +370,11 @@ function renderSection(el, conf, tab) {
     actionsEl.querySelectorAll('[data-a]').forEach(b => b.addEventListener('click', () => exportInOut(b.dataset.a, b)));
 
     const cols = [
-      { key: 'access.vehicle.plate', label: 'Targa', filter: 'text', upper: true, sortable: false, render: r => `<strong>${cell(r.access?.vehicle?.plate)}</strong>` },
+      { key: 'plate', label: 'Targa', filter: 'text', upper: true, sortable: false, render: r => `<strong>${cell(r.plate ?? r.access?.vehicle?.plate)}</strong>` },
     ];
     for (const l of LINKS) {
       if (!useAnagrafic(l.key)) continue;
-      cols.push({ key: `${l.key}.${l.field}`, label: l.label, filter: 'text', sortable: false, render: r => cell(name(r[l.key], l.field)) });
+      cols.push({ key: l.snap, label: l.label, filter: 'text', sortable: false, render: r => cell(r[l.snap] ?? name(r[l.key], l.field)) });
     }
     cols.push(
       { key: 'weight1', label: '1ª pesata', sortable: false, className: 'nowrap', render: r => r.weight1 ? `${esc(formatDateTime(r.weight1.date))}<br><small class="muted">${esc(r.weight1.pid || '')}</small>` : dash },
@@ -416,7 +417,7 @@ function renderSection(el, conf, tab) {
     const a = io.access || {};
     const info = [
       ['Accesso', a.type ? `${a.type}${a.mode === 'Transito' ? ' (transito)' : ''} · ${(STATUS[a.status] || { label: a.status }).label}` : null],
-      ['Tessera', a.card_registry?.number],
+      ['Tessera', io.card_number ?? a.card_registry?.number],
       ['Operatore', io.weight1?.operator?.description || io.weight2?.operator?.description],
       ['Riferimento documento', io.document_reference],
       ['Note', io.note],
@@ -450,7 +451,7 @@ function renderSection(el, conf, tab) {
         body.appendChild(f);
       }
       return openDialog({
-        title: `Modifica pesata${io.access?.vehicle?.plate ? ' ' + io.access.vehicle.plate : ''}`,
+        title: `Modifica pesata${io.plate ? ' ' + io.plate : ''}`,
         body, wide: true,
         actions: [{ label: 'Annulla', value: null }, { label: 'Salva', kind: 'primary', submit: true }],
         onSubmit: async form => {

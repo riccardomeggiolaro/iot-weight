@@ -29,18 +29,17 @@ def get_data_variables(in_out, is_generic=False):
         report = report_out if in_out.idWeight2 else report_in
     name_file = ""
     variables = ReportVariables(**{})
-    variables.customer = in_out.customer if in_out.customer else CustomerDataDTO(**{})
-    variables.supplier = in_out.supplier if in_out.supplier else SupplierDataDTO(**{})
-    variables.vector = in_out.vector if in_out.vector else VectorDataDTO(**{})
-    variables.driver = in_out.driver if in_out.driver else DriverDataDTO(**{})
-    variables.vehicle = in_out.access.vehicle if in_out.access and in_out.access.vehicle else VehicleDataDTO(**{})
-    variables.material = in_out.material if in_out.material else MaterialDataDTO(**{})
-    card = getattr(in_out.access, "card_registry", None) if in_out.access else None
-    variables.card = CardRegistryDTO(
-        id=getattr(card, "id", None),
-        number=getattr(card, "number", None),
-        code=getattr(card, "code", None),
-    ) if card else CardRegistryDTO(**{})
+    # Dati anagrafici dallo "stampino" della pesata: restano quelli del momento della pesata
+    def snap(fn, dto):
+        obj = fn(in_out)
+        return dto(**vars(obj)) if obj else dto(**{})
+    variables.customer = snap(resolve_in_out_customer, CustomerDataDTO)
+    variables.supplier = snap(resolve_in_out_supplier, SupplierDataDTO)
+    variables.vector = snap(resolve_in_out_vector, VectorDataDTO)
+    variables.driver = snap(resolve_in_out_driver, DriverDataDTO)
+    variables.vehicle = snap(resolve_in_out_vehicle, VehicleDataDTO)
+    variables.material = snap(resolve_in_out_material, MaterialDataDTO)
+    variables.card = snap(resolve_in_out_card, CardRegistryDTO)
     variables.operator = in_out.weight1.operator if in_out.weight1 and in_out.weight1.operator else in_out.weight2.operator if in_out.weight2 and in_out.weight2.operator else OperatorDataDTO(**{})
     variables.note = in_out.note
     variables.document_reference = in_out.document_reference
@@ -147,15 +146,15 @@ def generate_csv_report(variables: ReportVariables):
     data = [
         variables.customer.id if variables.customer.id else '',
         variables.customer.social_reason if variables.customer.social_reason else '',
-        variables.customer.telephone if variables.customer.telephone else '',
+        variables.customer.code if variables.customer.code else '',
         variables.customer.cfpiva if variables.customer.cfpiva else '',
         variables.supplier.id if variables.supplier.id else '',
         variables.supplier.social_reason if variables.supplier.social_reason else '',
-        variables.supplier.telephone if variables.supplier.telephone else '',
+        variables.supplier.code if variables.supplier.code else '',
         variables.supplier.cfpiva if variables.supplier.cfpiva else '',
         variables.vector.id if variables.vector.id else '',
         variables.vector.social_reason if variables.vector.social_reason else '',
-        variables.vector.telephone if variables.vector.telephone else '',
+        variables.vector.code if variables.vector.code else '',
         variables.vector.cfpiva if variables.vector.cfpiva else '',
         variables.driver.id if variables.driver.id else '',
         variables.driver.social_reason if variables.driver.social_reason else '',
@@ -203,16 +202,64 @@ def find_file_in_directory(directory, filename):
                 return f.read()  # Restituisce i byte del file
     return None
 
-def resolve_in_out_customer(in_out):
-    # Cliente e fornitore vanno presi dalla pesata (in_out), mai dall'accesso: l'accesso può
-    # derivare da una prenotazione e portare dati diversi da quelli pesati.
-    return in_out.customer
+# ── Lettura dello "stampino" della pesata ─────────────────────────────────────
+# I dati anagrafici vanno presi dalla pesata (in_out), mai dall'accesso: l'accesso può
+# derivare da una prenotazione e portare dati diversi da quelli pesati. La pesata conserva
+# una copia dei dati al momento della pesata (snapshot_version valorizzato); per le pesate
+# senza copia si usano le anagrafiche collegate. Ogni funzione restituisce un oggetto con
+# gli attributi dell'anagrafica (id, social_reason, ...) oppure None.
+from types import SimpleNamespace
 
-def resolve_in_out_supplier(in_out):
-    return in_out.supplier
 
-def resolve_in_out_vector(in_out):
-    return in_out.vector
+def _snapshot(in_out, id_attr, fields, relation=None, relation_fields=None):
+    if getattr(in_out, "snapshot_version", None):
+        values = {name: getattr(in_out, col, None) for name, col in fields.items()}
+        if not any(v not in (None, "") for v in values.values()):
+            return None
+        return SimpleNamespace(id=getattr(in_out, id_attr, None) if id_attr else None, **values)
+    rel = relation(in_out) if relation else None
+    if not rel:
+        return None
+    return SimpleNamespace(id=getattr(rel, "id", None), **{name: getattr(rel, name, None) for name in (relation_fields or fields)})
+
+
+def _company(kind):
+    def resolve(in_out):
+        return _snapshot(in_out, f"id{kind.capitalize()}",
+                         {"social_reason": f"{kind}_name", "code": f"{kind}_code", "cfpiva": f"{kind}_cfpiva"},
+                         lambda io: getattr(io, kind, None))
+    return resolve
+
+
+resolve_in_out_customer = _company("customer")
+resolve_in_out_supplier = _company("supplier")
+resolve_in_out_vector = _company("vector")
+
+
+def resolve_in_out_driver(in_out):
+    return _snapshot(in_out, "idDriver", {"social_reason": "driver_name", "telephone": "driver_telephone"},
+                     lambda io: io.driver)
+
+
+def resolve_in_out_material(in_out):
+    return _snapshot(in_out, "idMaterial", {"description": "material_description", "code": "material_code"},
+                     lambda io: io.material)
+
+
+def resolve_in_out_card(in_out):
+    return _snapshot(in_out, "idCardRegistry", {"number": "card_number", "code": "card_code"},
+                     lambda io: getattr(io.access, "card_registry", None) if io.access else None)
+
+
+def resolve_in_out_vehicle(in_out):
+    def relation(io):
+        return io.access.vehicle if io.access and io.access.vehicle else None
+    vehicle = _snapshot(in_out, None, {"plate": "plate", "description": "vehicle_description"}, relation)
+    if vehicle and getattr(in_out, "snapshot_version", None):
+        rel = relation(in_out)
+        vehicle.id = getattr(rel, "id", None) if rel else None
+        vehicle.tare = getattr(rel, "tare", None) if rel else None
+    return vehicle
 
 def compute_grouped_totals(items, key_fn, value_fn, default_label="Non specificato"):
     totals = {}
@@ -315,3 +362,13 @@ def migrate_report_templates(reports_dir) -> int:
                 import libs.lb_log as lb_log
                 lb_log.error(f"Migrazione modello di stampa '{path}' non riuscita: {e}")
     return changed
+
+
+def in_out_plate(in_out):
+    vehicle = resolve_in_out_vehicle(in_out)
+    return vehicle.plate if vehicle else None
+
+
+def in_out_material_description(in_out):
+    material = resolve_in_out_material(in_out)
+    return material.description if material else None

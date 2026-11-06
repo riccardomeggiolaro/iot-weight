@@ -1,3 +1,6 @@
+from applications.router.anagrafic.archive import delete_or_archive, restore as restore_archived, restore_if_archived
+import json
+from fastapi.encoders import jsonable_encoder
 from fastapi import APIRouter, HTTPException, Depends, Request
 from typing import Dict, Union, Optional
 from modules.md_database.md_database import LockRecordType
@@ -25,7 +28,19 @@ class CardRegistryRouter(WebSocket):
         self.router.add_api_route('', self.addCard, methods=['POST'], dependencies=[Depends(is_super_admin)])
         self.router.add_api_route('/{id}', self.setCard, methods=['PATCH'], dependencies=[Depends(is_super_admin)])
         self.router.add_api_route('/{id}', self.deleteCard, methods=['DELETE'], dependencies=[Depends(is_super_admin)])
+        self.router.add_api_route('/{id}/restore', self.restoreArchived, methods=['POST'], dependencies=[Depends(is_super_admin)])
         self.router.add_api_route('', self.deleteAllCards, methods=['DELETE'], dependencies=[Depends(is_super_admin)])
+
+    async def restoreArchived(self, id: int):
+        """Ripristina un'anagrafica archiviata."""
+        try:
+            data = restore_archived("card-registry", id)
+            await self.broadcastUpdateAnagrafic("card-registry", {"card-registry": json.dumps(jsonable_encoder(data))})
+            return data
+        except Exception as e:
+            status_code = getattr(e, 'status_code', 400)
+            detail = getattr(e, 'detail', str(e))
+            raise HTTPException(status_code=status_code, detail=detail)
 
     async def getListCardRegistry(
         self,
@@ -36,6 +51,8 @@ class CardRegistryRouter(WebSocket):
         order_direction: Optional[str] = None
     ):
         try:
+            # di default solo le anagrafiche attive; archived=true per vedere le archiviate
+            query_params["archived"] = str(query_params.get("archived", "false")).lower() == "true"
             if limit is not None:
                 del query_params["limit"]
             if offset is not None:
@@ -55,7 +72,7 @@ class CardRegistryRouter(WebSocket):
 
     async def addCard(self, body: AddCardRegistryDTO):
         try:
-            data = add_data("card-registry", body.dict())
+            data = restore_if_archived("card-registry", body.dict()) or add_data("card-registry", body.dict())
             card = CardRegistry(**data).json()
             await self.broadcastAddAnagrafic("card-registry", {"card-registry": card})
             return data
@@ -101,7 +118,7 @@ class CardRegistryRouter(WebSocket):
                     ).first()
                     if open_access:
                         raise HTTPException(status_code=400, detail=f"La tessera è assegnata ad una prenotazione aperta e non può essere eliminata")
-            data = delete_data("card-registry", id)
+            data, _archived = delete_or_archive("card-registry", id)
             card = CardRegistry(**data).json()
             await self.broadcastDeleteAnagrafic("card-registry", {"card-registry": card})
             return data

@@ -7,6 +7,7 @@ class CardRegistry(BaseModel):
     id: Optional[int] = None
     number: Optional[str] = None
     code: Optional[str] = None
+    archived: Optional[bool] = False
     date_created: Optional[datetime] = None
 
     class Config:

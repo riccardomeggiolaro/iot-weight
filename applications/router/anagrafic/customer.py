@@ -1,3 +1,6 @@
+from applications.router.anagrafic.archive import delete_or_archive, restore as restore_archived, restore_if_archived
+import json
+from fastapi.encoders import jsonable_encoder
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Request
 from typing import Dict, Union, Optional
 from modules.md_database.md_database import upload_file_datas_required_columns, LockRecordType
@@ -27,11 +30,25 @@ class CustomerRouter(WebSocket):
         self.router.add_api_route('', self.addCustomer, methods=['POST'], dependencies=[Depends(is_writable_user)])
         self.router.add_api_route('/{id}', self.setCustomer, methods=['PATCH'], dependencies=[Depends(is_writable_user)])
         self.router.add_api_route('/{id}', self.deleteCustomer, methods=['DELETE'], dependencies=[Depends(is_writable_user)])
+        self.router.add_api_route('/{id}/restore', self.restoreArchived, methods=['POST'], dependencies=[Depends(is_writable_user)])
         self.router.add_api_route('', self.deleteAllCustomers, methods=['DELETE'], dependencies=[Depends(is_writable_user)])
         self.router.add_api_route('/upload-file', self.upload_file, methods=['POST'], dependencies=[Depends(is_writable_user)])
 
+    async def restoreArchived(self, id: int):
+        """Ripristina un'anagrafica archiviata."""
+        try:
+            data = restore_archived("customer", id)
+            await self.broadcastUpdateAnagrafic("customer", {"customer": json.dumps(jsonable_encoder(data))})
+            return data
+        except Exception as e:
+            status_code = getattr(e, 'status_code', 400)
+            detail = getattr(e, 'detail', str(e))
+            raise HTTPException(status_code=status_code, detail=detail)
+
     async def getListCustomers(self, query_params: Dict[str, Union[str, int]] = Depends(get_query_params), limit: Optional[int] = None, offset: Optional[int] = None, order_by: Optional[str] = None, order_direction: Optional[str] = None):
         try:
+            # di default solo le anagrafiche attive; archived=true per vedere le archiviate
+            query_params["archived"] = str(query_params.get("archived", "false")).lower() == "true"
             if limit is not None:
                 del query_params["limit"]
             if offset is not None:
@@ -51,7 +68,7 @@ class CustomerRouter(WebSocket):
 
     async def addCustomer(self, body: AddCustomerDTO):
         try:
-            data = add_data("customer", body.dict())
+            data = restore_if_archived("customer", body.dict()) or add_data("customer", body.dict())
             customer = Customer(**data).json()
             await self.broadcastAddAnagrafic("customer", {"customer": customer})
             await self.broadcastAddAnagrafic("access", {"customer": customer})
@@ -90,10 +107,7 @@ class CustomerRouter(WebSocket):
             locked_data = get_data_by_attributes('lock_record', {"table_name": "customer", "idRecord": id, "type": LockRecordType.DELETE, "user_id": request.state.user.id})
             if not locked_data:
                 raise HTTPException(status_code=403, detail=f"You need to block the customer with id '{id}' before to update that")
-            check_customer_accesses = get_data_by_id("customer", id)
-            if check_customer_accesses and len(check_customer_accesses["accesses"]) > 0:
-                raise HTTPException(status_code=400, detail=f"Il cliente con id '{id}' è assegnato a delle pesate salvate")
-            data = delete_data("customer", id)
+            data, _archived = delete_or_archive("customer", id)
             customer = Customer(**data).json()
             await self.broadcastDeleteAnagrafic("customer", {"customer": customer})
             await self.broadcastDeleteAnagrafic("access", {"customer": customer})

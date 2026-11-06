@@ -1,3 +1,6 @@
+from applications.router.anagrafic.archive import delete_or_archive, restore as restore_archived, restore_if_archived
+import json
+from fastapi.encoders import jsonable_encoder
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Request
 from typing import Dict, Union, Optional
 from modules.md_database.md_database import upload_file_datas_required_columns, LockRecordType
@@ -28,11 +31,25 @@ class VehicleRouter(WebSocket):
         self.router.add_api_route('', self.addVehicle, methods=['POST'], dependencies=[Depends(is_writable_user)])
         self.router.add_api_route('/{id}', self.setVehicle, methods=['PATCH'], dependencies=[Depends(is_writable_user)])
         self.router.add_api_route('/{id}', self.deleteVehicle, methods=['DELETE'], dependencies=[Depends(is_writable_user)])
+        self.router.add_api_route('/{id}/restore', self.restoreArchived, methods=['POST'], dependencies=[Depends(is_writable_user)])
         self.router.add_api_route('', self.deleteAllVehicles, methods=['DELETE'], dependencies=[Depends(is_writable_user)])
         self.router.add_api_route('/upload-file', self.upload_file, methods=['POST'], dependencies=[Depends(is_writable_user)])
 
+    async def restoreArchived(self, id: int):
+        """Ripristina un'anagrafica archiviata."""
+        try:
+            data = restore_archived("vehicle", id)
+            await self.broadcastUpdateAnagrafic("vehicle", {"vehicle": json.dumps(jsonable_encoder(data))})
+            return data
+        except Exception as e:
+            status_code = getattr(e, 'status_code', 400)
+            detail = getattr(e, 'detail', str(e))
+            raise HTTPException(status_code=status_code, detail=detail)
+
     async def getListVehicles(self, query_params: Dict[str, Union[str, int]] = Depends(get_query_params), limit: Optional[int] = None, offset: Optional[int] = None, permanentAssociatedFirstToWeighing1: Optional[bool] = None, order_by: Optional[str] = None, order_direction: Optional[str] = None):
         try:
+            # di default solo le anagrafiche attive; archived=true per vedere le archiviate
+            query_params["archived"] = str(query_params.get("archived", "false")).lower() == "true"
             if limit is not None:
                 del query_params["limit"]
             if offset is not None:
@@ -54,7 +71,7 @@ class VehicleRouter(WebSocket):
 
     async def addVehicle(self, body: AddVehicleDTO):
         try:
-            data = add_data("vehicle", body.dict())
+            data = restore_if_archived("vehicle", body.dict()) or add_data("vehicle", body.dict())
             vehicle = Vehicle(**data).json()
             await self.broadcastAddAnagrafic("vehicle", {"vehicle": vehicle})
             await self.broadcastAddAnagrafic("access", {"vehicle": vehicle})
@@ -95,10 +112,7 @@ class VehicleRouter(WebSocket):
             locked_data = get_data_by_attributes('lock_record', {"table_name": "vehicle", "idRecord": id, "type": LockRecordType.DELETE, "user_id": request.state.user.id})
             if not locked_data:
                 raise HTTPException(status_code=403, detail=f"You need to block the vehicle with id '{id}' before to update that")
-            check_vehicle_accesses = get_data_by_id("vehicle", id)
-            if check_vehicle_accesses and len(check_vehicle_accesses["accesses"]) > 0:
-                raise HTTPException(status_code=400, detail=f"Il veicolo con id '{id}' è assegnato a delle pesate salvate")
-            data = delete_data("vehicle", id)
+            data, _archived = delete_or_archive("vehicle", id)
             vehicle = Vehicle(**data).json()
             await self.broadcastDeleteAnagrafic("vehicle", {"vehicle": vehicle})
             await self.broadcastDeleteAnagrafic("access", {"vehicle": vehicle})

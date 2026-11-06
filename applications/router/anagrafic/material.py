@@ -1,3 +1,6 @@
+from applications.router.anagrafic.archive import delete_or_archive, restore as restore_archived, restore_if_archived
+import json
+from fastapi.encoders import jsonable_encoder
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Request
 from typing import Dict, Union, Optional
 from modules.md_database.md_database import upload_file_datas_required_columns, LockRecordType
@@ -26,11 +29,25 @@ class MaterialRouter(WebSocket):
         self.router.add_api_route('', self.addMaterial, methods=['POST'], dependencies=[Depends(is_writable_user)])
         self.router.add_api_route('/{id}', self.setMaterial, methods=['PATCH'], dependencies=[Depends(is_writable_user)])
         self.router.add_api_route('/{id}', self.deleteMaterial, methods=['DELETE'], dependencies=[Depends(is_writable_user)])
+        self.router.add_api_route('/{id}/restore', self.restoreArchived, methods=['POST'], dependencies=[Depends(is_writable_user)])
         self.router.add_api_route('', self.deleteAllMaterials, methods=['DELETE'], dependencies=[Depends(is_writable_user)])
         self.router.add_api_route('/upload-file', self.upload_file, methods=['POST'], dependencies=[Depends(is_writable_user)])
 
+    async def restoreArchived(self, id: int):
+        """Ripristina un'anagrafica archiviata."""
+        try:
+            data = restore_archived("material", id)
+            await self.broadcastUpdateAnagrafic("material", {"material": json.dumps(jsonable_encoder(data))})
+            return data
+        except Exception as e:
+            status_code = getattr(e, 'status_code', 400)
+            detail = getattr(e, 'detail', str(e))
+            raise HTTPException(status_code=status_code, detail=detail)
+
     async def getListMaterials(self, query_params: Dict[str, Union[str, int]] = Depends(get_query_params), limit: Optional[int] = None, offset: Optional[int] = None, order_by: Optional[str] = None, order_direction: Optional[str] = None):
         try:
+            # di default solo le anagrafiche attive; archived=true per vedere le archiviate
+            query_params["archived"] = str(query_params.get("archived", "false")).lower() == "true"
             if limit is not None:
                 del query_params["limit"]
             if offset is not None:
@@ -50,7 +67,7 @@ class MaterialRouter(WebSocket):
 
     async def addMaterial(self, body: AddMaterialDTO):
         try:
-            data = add_data("material", body.dict())
+            data = restore_if_archived("material", body.dict()) or add_data("material", body.dict())
             material = Material(**data).json()
             await self.broadcastAddAnagrafic("material", {"material": material})
             await self.broadcastAddAnagrafic("access", {"material": material})
@@ -85,7 +102,7 @@ class MaterialRouter(WebSocket):
             locked_data = get_data_by_attributes('lock_record', {"table_name": "material", "idRecord": id, "type": LockRecordType.DELETE, "user_id": request.state.user.id})
             if not locked_data:
                 raise HTTPException(status_code=400, detail=f"You need to block the material with id '{id}' before to delete that")
-            data = delete_data("material", id)
+            data, _archived = delete_or_archive("material", id)
             material = Material(**data).json()
             await self.broadcastDeleteAnagrafic("material", {"material": material})
             await self.broadcastDeleteAnagrafic("access", {"material": material})
