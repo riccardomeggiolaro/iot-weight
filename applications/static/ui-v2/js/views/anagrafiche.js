@@ -30,7 +30,7 @@ const ENTITIES = {
     fields: [
       { key: 'social_reason', label: 'Ragione sociale', required: true, filter: true },
       { key: 'description', label: 'Descrizione', filter: true },
-      { key: 'code', label: 'Codice', filter: true, hint: 'codice nel gestionale' },
+      { key: 'code', label: 'Codice', filter: true, formLabel: 'Codice cliente', hint: 'del gestionale' },
     ],
     upload: true,
   },
@@ -40,7 +40,7 @@ const ENTITIES = {
     fields: [
       { key: 'social_reason', label: 'Ragione sociale', required: true, filter: true },
       { key: 'description', label: 'Descrizione', filter: true },
-      { key: 'code', label: 'Codice', filter: true, hint: 'codice nel gestionale' },
+      { key: 'code', label: 'Codice', filter: true, formLabel: 'Codice fornitore', hint: 'del gestionale' },
     ],
     upload: true,
   },
@@ -50,7 +50,7 @@ const ENTITIES = {
     fields: [
       { key: 'social_reason', label: 'Ragione sociale', required: true, filter: true },
       { key: 'description', label: 'Descrizione', filter: true },
-      { key: 'code', label: 'Codice', filter: true, hint: 'codice nel gestionale' },
+      { key: 'code', label: 'Codice', filter: true, formLabel: 'Codice vettore', hint: 'del gestionale' },
     ],
     upload: true,
   },
@@ -59,7 +59,7 @@ const ENTITIES = {
     title: r => r.description,
     fields: [
       { key: 'description', label: 'Descrizione', required: true, filter: true },
-      { key: 'code', label: 'Codice', filter: true, hint: 'codice nel gestionale' },
+      { key: 'code', label: 'Codice', filter: true, formLabel: 'Codice materiale', hint: 'del gestionale' },
     ],
     upload: true,
   },
@@ -69,7 +69,7 @@ const ENTITIES = {
     fields: [
       { key: 'social_reason', label: 'Nome e cognome', required: true, filter: true },
       { key: 'description', label: 'Descrizione', filter: true },
-      { key: 'code', label: 'Codice', filter: true, hint: 'codice nel gestionale' },
+      { key: 'code', label: 'Codice', filter: true, formLabel: 'Codice autista', hint: 'del gestionale' },
     ],
     upload: true,
   },
@@ -78,7 +78,7 @@ const ENTITIES = {
     title: r => r.number,
     fields: [
       { key: 'number', label: 'Numero', required: true, filter: true },
-      { key: 'code', label: 'Codice', required: true, filter: true },
+      { key: 'code', label: 'Codice badge', required: true, filter: true },
     ],
     writeLevel: SUPER_ADMIN,
   },
@@ -174,7 +174,7 @@ export function renderAnagrafiche(el) {
   function formHtml(rec) {
     return `<div class="form-grid">${ent.fields.map(f => {
       const v = rec?.[f.key];
-      return `<label class="field"><span>${esc(f.label)}${f.required ? '' : ` <em class="muted">(${f.hint ? esc(f.hint) + ', ' : ''}facoltativo)</em>`}</span>
+      return `<label class="field"><span>${esc(f.formLabel || f.label)}${f.required ? '' : ` <em class="muted">(${f.hint ? esc(f.hint) + ', ' : ''}facoltativo)</em>`}</span>
         <input class="input" name="${esc(f.key)}" type="${f.type || 'text'}" value="${esc(v ?? '')}" autocomplete="off"
           ${f.required ? 'required' : ''} ${f.min != null ? `min="${f.min}"` : ''} ${f.step ? `step="${f.step}"` : ''} ${f.upper ? 'data-upper' : ''}></label>`;
     }).join('')}</div>`;
