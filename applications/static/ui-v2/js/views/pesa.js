@@ -3,7 +3,7 @@
 
 import { api, openProtectedFile } from '../api.js';
 import { plant, weightState } from '../plant.js';
-import { esc, formatKg, formatTime, toast } from '../ui.js';
+import { esc, formatKg, formatTime, toast, openDialog } from '../ui.js';
 
 const SELECTED_KEY = 'ui-v2.selectedWeigher';
 const ACTIVITY_KEY = 'ui-v2.activityOpen';
@@ -59,6 +59,7 @@ export function renderPesa(el) {
           <button class="btn big" data-act="out">Pesata uscita <span class="kbd">F2</span></button>
           <div class="small-row">
             <button class="btn" data-act="tare">Tara <span class="kbd">F3</span></button>
+            <button class="btn" data-act="preset">Preset tara</button>
             <button class="btn" data-act="zero">Zero <span class="kbd">F4</span></button>
             <button class="btn" data-act="reprint">Ristampa</button>
           </div>
@@ -288,12 +289,27 @@ export function renderPesa(el) {
     await plant.refreshData(current);
   }
 
-  async function command(act) {
+  // Preset tara: chiede il valore in kg e lo imposta sulla pesa
+  async function presetTare() {
+    if (busy) return;
+    const tare = await openDialog({
+      title: `Preset tara · ${current.name}`,
+      body: `<label class="field"><span>Tara (kg)</span>
+        <input class="input" name="tare" type="number" inputmode="numeric" min="0" step="1" required placeholder="es. 12500"></label>`,
+      actions: [{ label: 'Annulla', value: null }, { label: 'Imposta', kind: 'primary', submit: true }],
+      onSubmit: form => Math.round(Number(form.elements.tare.value)),
+    });
+    if (tare === null || tare === true) return;
+    command('preset', { tare });
+  }
+
+  async function command(act, params = {}) {
     if (busy) return;
     const routes = {
       in:      { path: '/api/command-weigher/in',  method: 'POST', label: 'Pesata entrata' },
       out:     { path: '/api/command-weigher/out', method: 'POST', label: 'Pesata uscita' },
       tare:    { path: '/api/command-weigher/tare', label: 'Tara' },
+      preset:  { path: '/api/command-weigher/tare/preset', label: 'Preset tara' },
       zero:    { path: '/api/command-weigher/zero', label: 'Zero' },
       reprint: { path: '/api/anagrafic/access/in-out/print-last', label: 'Ristampa' },
     };
@@ -302,11 +318,12 @@ export function renderPesa(el) {
     busy = true;
     el.querySelectorAll('.actions .btn').forEach(b => b.disabled = true);
     try {
-      const res = await api(r.path, { method: r.method || 'GET', query: plant.query(current) });
+      const res = await api(r.path, { method: r.method || 'GET', query: { ...plant.query(current), ...params } });
       const err = res?.command_details?.error_message;
       if (err) { toast(`${r.label}: ${err}`, 'err'); logActivity(current, `${r.label}: ${err}`, 'err'); }
       else {
-        const msg = act === 'in' || act === 'out' ? `${r.label} in corso…` : `${r.label} eseguita`;
+        const msg = act === 'in' || act === 'out' ? `${r.label} in corso…`
+          : act === 'preset' ? `Preset tara ${formatKg(params.tare)} kg` : `${r.label} eseguita`;
         toast(msg, 'ok'); logActivity(current, msg);
       }
     } catch (e) {
@@ -342,6 +359,7 @@ export function renderPesa(el) {
     if (relay) return toggleRelay(relay.dataset.relay);
     const act = e.target.closest('[data-act]');
     if (act?.dataset.act === 'activity') return setActivityOpen(!activityOpen);
+    if (act?.dataset.act === 'preset') return presetTare();
     if (act) return act.dataset.act === 'clear' ? clearSelection() : command(act.dataset.act);
   });
   const form = el.querySelector('[data-form="plate"]');
