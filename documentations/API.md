@@ -66,7 +66,8 @@ Le entità anagrafiche condividono la stessa struttura di endpoint. I prefissi d
 
 | Prefisso | Entità |
 |----------|--------|
-| `/api/anagrafic/subject` | Soggetti (clienti/fornitori) |
+| `/api/anagrafic/customer` | Clienti |
+| `/api/anagrafic/supplier` | Fornitori |
 | `/api/anagrafic/vehicle` | Veicoli |
 | `/api/anagrafic/driver` | Autisti |
 | `/api/anagrafic/vector` | Vettori |
@@ -99,7 +100,7 @@ POST /{prefisso}
 ```
 Richiede permessi di scrittura.
 
-#### Soggetto (`/api/anagrafic/subject`)
+#### Cliente (`/api/anagrafic/customer`) e Fornitore (`/api/anagrafic/supplier`)
 ```json
 {
   "social_reason": "Ragione Sociale Srl",
@@ -200,12 +201,15 @@ Richiede permessi di scrittura. La **targa è obbligatoria** (tramite `vehicle.p
 **Body:**
 ```json
 {
-  "typeSubject": "CUSTOMER",
-  "subject": {
+  "customer": {
     "id": 1,
     "social_reason": "Cliente Srl",
     "telephone": "0123456789",
     "cfpiva": "12345678901"
+  },
+  "supplier": {
+    "id": null,
+    "social_reason": "Fornitore Srl"
   },
   "vehicle": {
     "id": null,
@@ -239,11 +243,11 @@ Richiede permessi di scrittura. La **targa è obbligatoria** (tramite `vehicle.p
 
 | Campo | Valori |
 |-------|--------|
-| `typeSubject` | `CUSTOMER`, `SUPPLIER` |
 | `type` | `RESERVATION`, `MANUALLY`, `TEST` |
 | `mode` | `STANDARD`, `TRANSIT` |
 
-> Per i campi anagrafici (subject, vehicle, ecc.) si può passare solo l'`id` di un record esistente, oppure i dati completi per creare un nuovo record al volo. Usare `id: null` o `id: -1` per non fare riferimento a un record esistente.
+> Cliente e fornitore sono indipendenti: si possono indicare entrambi, uno solo o nessuno.
+> Per i campi anagrafici (customer, supplier, vehicle, ecc.) si può passare solo l'`id` di un record esistente, oppure i dati completi per creare un nuovo record al volo. Usare `id: null` o `id: -1` per non fare riferimento a un record esistente.
 
 ### Modifica accesso
 ```
@@ -467,8 +471,7 @@ Registra il primo peso (entrata). Il peso corrente sulla pesa deve essere stabil
 **Body:**
 ```json
 {
-  "typeSubject": "CUSTOMER",
-  "subject": { "id": 1 },
+  "customer": { "id": 1 },
   "vehicle": { "plate": "AB123CD" },
   "vector": {},
   "driver": {},
@@ -541,8 +544,7 @@ PATCH /api/data
 ```json
 {
   "data_in_execution": {
-    "typeSubject": "CUSTOMER",
-    "subject": { "id": 1 },
+    "customer": { "id": 1 },
     "vehicle": { "plate": "AB123CD" },
     "vector": {},
     "driver": {},
@@ -573,7 +575,7 @@ DELETE /api/data
 ```
 WS /api/anagrafic/{anagrafic}?token=<jwt>
 ```
-Dove `{anagrafic}` può essere: `access`, `subject`, `vehicle`, `driver`, `vector`, `material`, `operator`.
+Dove `{anagrafic}` può essere: `access`, `customer`, `supplier`, `vehicle`, `driver`, `vector`, `material`, `operator`.
 
 Il token JWT va passato come query parameter `token`.
 

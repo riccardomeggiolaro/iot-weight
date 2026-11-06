@@ -281,8 +281,8 @@ const totemViews = {
                                 dataInExecution = res.data_in_execution;
                                 const d = res.data_in_execution;
                                 selectedVehicle = { id: d.vehicle.id, plate: d.vehicle.plate || '' };
-                                if (d.typeSubject) selectedTypeSubject = d.typeSubject;
-                                selectedSubject = { id: d.subject.id, social_reason: d.subject.social_reason || '' };
+                                selectedCustomer = { id: d.customer?.id || null, social_reason: d.customer?.social_reason || '' };
+                                selectedSupplier = { id: d.supplier?.id || null, social_reason: d.supplier?.social_reason || '' };
                                 selectedVector = { id: d.vector.id, social_reason: d.vector.social_reason || '' };
                                 selectedDriver = { id: d.driver?.id || null, social_reason: d.driver?.social_reason || '' };
                                 selectedMaterial = { id: d.material.id, description: d.material.description || '' };
@@ -350,25 +350,43 @@ const totemViews = {
         }
     },
 
-    // ==================== SUBJECT ====================
-    subject: {
-        get title() { return 'Totem - ' + t('subject_title'); },
+    // ==================== CUSTOMER ====================
+    customer: {
+        get title() { return 'Totem - ' + t('customer'); },
         html: () => `
-            <h2 id="subjectTitle">${t('subject_title')}</h2>
-            <ul class="suggestions-list suggestions-grid" id="subjectGrid"></ul>
+            <h2>${t('customer')}</h2>
+            <ul class="suggestions-list suggestions-grid" id="customerGrid"></ul>
             <div class="step-buttons">
-                <button class="btn btn-secondary" onclick="goTo(isFromSummary() ? 'summary' : _findPrevEnabledStep('subject') + '?back=1')">${t('back')}</button>
-                <button class="btn btn-primary btn-next" id="btnNextPage" onclick="_nextPage('subjectGrid', 'vector')">${t('more')}</button>
+                <button class="btn btn-secondary" onclick="goTo(isFromSummary() ? 'summary' : _findPrevEnabledStep('customer') + '?back=1')">${t('back')}</button>
+                <button class="btn btn-primary btn-next" id="btnNextPage" onclick="_nextPage('customerGrid', 'supplier')">${t('more')}</button>
             </div>
         `,
         init: () => {
             window.onDataReady = function() {
-                document.getElementById('subjectTitle').textContent =
-                    selectedTypeSubject === 'CUSTOMER' ? t('customer') : t('supplier');
+                loadItems('customer', 'social_reason', '', 'customerGrid', (item) => {
+                    selectAndAdvance('customer', item, 'supplier');
+                }, 'supplier', 'plate');
+            };
+            window.onDataUpdate = null;
+        }
+    },
 
-                loadItems('subject', 'social_reason', '', 'subjectGrid', (item) => {
-                    selectAndAdvance('subject', item, 'vector');
-                }, 'vector', 'plate');
+    // ==================== SUPPLIER ====================
+    supplier: {
+        get title() { return 'Totem - ' + t('supplier'); },
+        html: () => `
+            <h2>${t('supplier')}</h2>
+            <ul class="suggestions-list suggestions-grid" id="supplierGrid"></ul>
+            <div class="step-buttons">
+                <button class="btn btn-secondary" onclick="goTo(isFromSummary() ? 'summary' : _findPrevEnabledStep('supplier') + '?back=1')">${t('back')}</button>
+                <button class="btn btn-primary btn-next" id="btnNextPage" onclick="_nextPage('supplierGrid', 'vector')">${t('more')}</button>
+            </div>
+        `,
+        init: () => {
+            window.onDataReady = function() {
+                loadItems('supplier', 'social_reason', '', 'supplierGrid', (item) => {
+                    selectAndAdvance('supplier', item, 'vector');
+                }, 'vector', 'customer');
             };
             window.onDataUpdate = null;
         }
@@ -389,7 +407,7 @@ const totemViews = {
             window.onDataReady = function() {
                 loadItems('vector', 'social_reason', '', 'vectorGrid', (item) => {
                     selectAndAdvance('vector', item, 'driver');
-                }, 'driver', 'subject');
+                }, 'driver', 'supplier');
             };
             window.onDataUpdate = null;
         }
@@ -466,10 +484,17 @@ const totemViews = {
                         <span class="summary-item-edit">&#9998;</span>
                     </div>
                 </div>
-                <div class="summary-item" id="rowSubject">
-                    <span class="summary-item-label" id="summaryType">-</span>
-                    <div class="summary-item-value" onclick="goTo('subject?from=summary')">
-                        <span class="summary-item-text" id="summarySubject">-</span>
+                <div class="summary-item" id="rowCustomer">
+                    <span class="summary-item-label">${t('customer')}</span>
+                    <div class="summary-item-value" onclick="goTo('customer?from=summary')">
+                        <span class="summary-item-text" id="summaryCustomer">-</span>
+                        <span class="summary-item-edit">&#9998;</span>
+                    </div>
+                </div>
+                <div class="summary-item" id="rowSupplier">
+                    <span class="summary-item-label">${t('supplier')}</span>
+                    <div class="summary-item-value" onclick="goTo('supplier?from=summary')">
+                        <span class="summary-item-text" id="summarySupplier">-</span>
                         <span class="summary-item-edit">&#9998;</span>
                     </div>
                 </div>
@@ -513,8 +538,8 @@ const totemViews = {
             function updateSummary() {
                 if (!document.getElementById('summaryPlate')) return;
                 document.getElementById('summaryPlate').textContent = selectedVehicle.plate || '-';
-                document.getElementById('summaryType').textContent = selectedTypeSubject === 'CUSTOMER' ? t('customer') : t('supplier');
-                document.getElementById('summarySubject').textContent = selectedSubject.social_reason || '-';
+                document.getElementById('summaryCustomer').textContent = selectedCustomer.social_reason || '-';
+                document.getElementById('summarySupplier').textContent = selectedSupplier.social_reason || '-';
                 document.getElementById('summaryVector').textContent = selectedVector.social_reason || '-';
                 document.getElementById('summaryDriver').textContent = selectedDriver.social_reason || '-';
                 document.getElementById('summaryMaterial').textContent = selectedMaterial.description || '-';
@@ -525,7 +550,8 @@ const totemViews = {
                 // Hide rows for disabled anagrafiche
                 const rowVisibility = {
                     rowPlate: totemAnagrafiche.vehicle,
-                    rowSubject: totemAnagrafiche.subject,
+                    rowCustomer: totemAnagrafiche.customer,
+                    rowSupplier: totemAnagrafiche.supplier,
                     rowVector: totemAnagrafiche.vector,
                     rowDriver: totemAnagrafiche.driver,
                     rowMaterial: totemAnagrafiche.material,
@@ -546,8 +572,10 @@ const totemViews = {
                 if (rowPlate) rowPlate.classList.toggle('disabled', isAutomatic || isReservationMode);
 
                 // Each field: locked in automatic mode or if reservation has it
-                const rowSubject = document.getElementById('rowSubject');
-                if (rowSubject) rowSubject.classList.toggle('disabled', isAutomatic || (isReservationMode && _reservationHasSubject));
+                const rowCustomer = document.getElementById('rowCustomer');
+                if (rowCustomer) rowCustomer.classList.toggle('disabled', isAutomatic || (isReservationMode && _reservationHasCustomer));
+                const rowSupplier = document.getElementById('rowSupplier');
+                if (rowSupplier) rowSupplier.classList.toggle('disabled', isAutomatic || (isReservationMode && _reservationHasSupplier));
                 const rowVector = document.getElementById('rowVector');
                 if (rowVector) rowVector.classList.toggle('disabled', isAutomatic || (isReservationMode && _reservationHasVector));
                 const rowDriver = document.getElementById('rowDriver');

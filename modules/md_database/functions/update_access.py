@@ -1,4 +1,4 @@
-from modules.md_database.md_database import SessionLocal, Subject, Vector, Driver, Vehicle, Material, Access, AccessStatus, Weighing, Operator, TypeSubjectEnum, TypeAccess, CardRegistry
+from modules.md_database.md_database import SessionLocal, Customer, Supplier, Vector, Driver, Vehicle, Material, Access, AccessStatus, Weighing, Operator, TypeAccess, CardRegistry
 from modules.md_database.interfaces.access import SetAccessDTO
 from modules.md_database.functions.get_access_by_vehicle_id_if_uncompete import get_access_by_vehicle_id_if_uncomplete
 from modules.md_database.functions.get_access_by_identify_if_uncomplete import get_access_by_identify_if_uncomplete
@@ -31,24 +31,43 @@ def update_access(id: int, data: SetAccessDTO, idInOut: int = None):
             if access.type == TypeAccess.MANUALLY and data.number_in_out is not None and data.number_in_out != access.number_in_out:
                 raise ValueError("Non puoi modificare il numero di operazioni per gli accessi manuali")
 
-            current_model = Subject
+            current_model = Customer
             if not idInOut:
-                if data.subject.id in [None, -1]:
-                    add_subject = {
-                        "social_reason": data.subject.social_reason if data.subject.social_reason != "" else None,
-                        "telephone": data.subject.telephone if data.subject.telephone != "" else None,
-                        "cfpiva": data.subject.cfpiva if data.subject.cfpiva != "" else None
+                if data.customer.id in [None, -1]:
+                    add_customer = {
+                        "social_reason": data.customer.social_reason if data.customer.social_reason != "" else None,
+                        "telephone": data.customer.telephone if data.customer.telephone != "" else None,
+                        "cfpiva": data.customer.cfpiva if data.customer.cfpiva != "" else None
                     }
-                    if has_non_none_value(add_subject):
-                        data_to_check = data.subject.dict()
-                        subject = current_model(**add_subject)
-                        session.add(subject)
+                    if has_non_none_value(add_customer):
+                        data_to_check = data.customer.dict()
+                        customer = current_model(**add_customer)
+                        session.add(customer)
                         session.flush()
-                        access.idSubject = subject.id
-                    elif data.subject.id == -1:
-                        access.idSubject = None
+                        access.idCustomer = customer.id
+                    elif data.customer.id == -1:
+                        access.idCustomer = None
                 else:
-                    access.idSubject = data.subject.id
+                    access.idCustomer = data.customer.id
+
+            current_model = Supplier
+            if not idInOut:
+                if data.supplier.id in [None, -1]:
+                    add_supplier = {
+                        "social_reason": data.supplier.social_reason if data.supplier.social_reason != "" else None,
+                        "telephone": data.supplier.telephone if data.supplier.telephone != "" else None,
+                        "cfpiva": data.supplier.cfpiva if data.supplier.cfpiva != "" else None
+                    }
+                    if has_non_none_value(add_supplier):
+                        data_to_check = data.supplier.dict()
+                        supplier = current_model(**add_supplier)
+                        session.add(supplier)
+                        session.flush()
+                        access.idSupplier = supplier.id
+                    elif data.supplier.id == -1:
+                        access.idSupplier = None
+                else:
+                    access.idSupplier = data.supplier.id
 
             current_model = Vector
             if not idInOut:
@@ -179,32 +198,60 @@ def update_access(id: int, data: SetAccessDTO, idInOut: int = None):
                         in_out.idMaterial = data.material.id
                         break
 
-            # Gestione subject per InOut specifico
-            current_model = Subject
-            if idInOut and data.subject.id in [None, -1]:
-                add_subject = {
-                    "social_reason": data.subject.social_reason if data.subject.social_reason != "" else None,
-                    "telephone": data.subject.telephone if data.subject.telephone != "" else None,
-                    "cfpiva": data.subject.cfpiva if data.subject.cfpiva != "" else None
+            # Gestione customer per InOut specifico
+            current_model = Customer
+            if idInOut and data.customer.id in [None, -1]:
+                add_customer = {
+                    "social_reason": data.customer.social_reason if data.customer.social_reason != "" else None,
+                    "telephone": data.customer.telephone if data.customer.telephone != "" else None,
+                    "cfpiva": data.customer.cfpiva if data.customer.cfpiva != "" else None
                 }
-                if has_non_none_value(add_subject):
-                    data_to_check = data.subject.dict()
-                    subject = current_model(**add_subject)
-                    session.add(subject)
+                if has_non_none_value(add_customer):
+                    data_to_check = data.customer.dict()
+                    customer = current_model(**add_customer)
+                    session.add(customer)
                     session.flush()
                     for in_out in access.in_out:
                         if in_out.id == idInOut:
-                            in_out.idSubject = subject.id
+                            in_out.idCustomer = customer.id
                             break
-                elif data.subject.id == -1:
+                elif data.customer.id == -1:
                     for in_out in access.in_out:
                         if in_out.id == idInOut:
-                            in_out.idSubject = None
+                            in_out.idCustomer = None
                             break
-            elif idInOut and data.subject.id:
+            elif idInOut and data.customer.id:
                 for in_out in access.in_out:
                     if in_out.id == idInOut:
-                        in_out.idSubject = data.subject.id
+                        in_out.idCustomer = data.customer.id
+                        break
+
+            # Gestione supplier per InOut specifico
+            current_model = Supplier
+            if idInOut and data.supplier.id in [None, -1]:
+                add_supplier = {
+                    "social_reason": data.supplier.social_reason if data.supplier.social_reason != "" else None,
+                    "telephone": data.supplier.telephone if data.supplier.telephone != "" else None,
+                    "cfpiva": data.supplier.cfpiva if data.supplier.cfpiva != "" else None
+                }
+                if has_non_none_value(add_supplier):
+                    data_to_check = data.supplier.dict()
+                    supplier = current_model(**add_supplier)
+                    session.add(supplier)
+                    session.flush()
+                    for in_out in access.in_out:
+                        if in_out.id == idInOut:
+                            in_out.idSupplier = supplier.id
+                            break
+                elif data.supplier.id == -1:
+                    for in_out in access.in_out:
+                        if in_out.id == idInOut:
+                            in_out.idSupplier = None
+                            break
+            elif idInOut and data.supplier.id:
+                for in_out in access.in_out:
+                    if in_out.id == idInOut:
+                        in_out.idSupplier = data.supplier.id
                         break
 
             # Gestione vector per InOut specifico
@@ -270,8 +317,6 @@ def update_access(id: int, data: SetAccessDTO, idInOut: int = None):
                         target_in_out = in_out
                         break
                 if target_in_out:
-                    if data.typeSubject:
-                        target_in_out.typeSubject = TypeSubjectEnum[data.typeSubject]
                     if data.note is not None:
                         target_in_out.note = data.note if data.note != "" else None
                     if data.document_reference is not None:
@@ -352,9 +397,6 @@ def update_access(id: int, data: SetAccessDTO, idInOut: int = None):
                             if weight2:
                                 weight2.idOperator = data.operator2.id
                         break
-
-            if not idInOut and data.typeSubject:
-                access.typeSubject = TypeSubjectEnum[data.typeSubject]
 
             if data.number_in_out is not None:
                 if data.number_in_out != -1:

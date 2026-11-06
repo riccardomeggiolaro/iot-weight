@@ -21,7 +21,8 @@ def get_access_by_id(access_id: int) -> Dict[str, Union[bool, str, dict]]:
         access = (
             session.query(Access)
             .options(
-                selectinload(Access.subject),
+                selectinload(Access.customer),
+                selectinload(Access.supplier),
                 selectinload(Access.vector),
                 selectinload(Access.driver),
                 selectinload(Access.vehicle),
@@ -38,7 +39,8 @@ def get_access_by_id(access_id: int) -> Dict[str, Union[bool, str, dict]]:
                     selectinload(Weighing.weighing_pictures)
                 ),
                 selectinload(Access.in_out).selectinload(InOut.material),
-                selectinload(Access.in_out).selectinload(InOut.subject),
+                selectinload(Access.in_out).selectinload(InOut.customer),
+                selectinload(Access.in_out).selectinload(InOut.supplier),
                 selectinload(Access.in_out).selectinload(InOut.vector),
                 selectinload(Access.in_out).selectinload(InOut.driver),
             )

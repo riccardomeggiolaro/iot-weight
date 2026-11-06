@@ -119,7 +119,7 @@
 └─────────────────────────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│      User       │     │    Subject      │     │     Vector      │
+│      User       │     │Customer/Supplier│     │     Vector      │
 ├─────────────────┤     ├─────────────────┤     ├─────────────────┤
 │ id (PK)         │     │ id (PK)         │     │ id (PK)         │
 │ username        │     │ social_reason   │     │ social_reason   │
@@ -152,14 +152,14 @@
 ┌─────────────────────────────────────────────────────────────────────────────────────┐
 │                                    ACCESS                                            │
 ├─────────────────────────────────────────────────────────────────────────────────────┤
-│ id (PK) │ typeSubject │ number_in_out │ status      │ type        │ badge         │
-│         │ (CLIENTE/   │               │ (WAITING/   │ (RESERV./   │               │
-│         │  FORNITORE) │               │  ENTERED/   │  MANUALLY/  │               │
+│ id (PK) │ idCustomer  │ number_in_out │ status      │ type        │ badge         │
+│         │ idSupplier  │               │ (WAITING/   │ (RESERV./   │               │
+│         │ (facoltat.) │               │  ENTERED/   │  MANUALLY/  │               │
 │         │             │               │  CLOSED)    │  TEST)      │               │
 ├─────────────────────────────────────────────────────────────────────────────────────┤
 │ selected │ hidden │ document_reference │ note │ date_created                        │
 ├─────────────────────────────────────────────────────────────────────────────────────┤
-│ FK: idSubject → Subject │ FK: idVector → Vector │ FK: idDriver → Driver             │
+│ FK: idCustomer → Customer, idSupplier → Supplier │ FK: idVector, idDriver           │
 │ FK: idVehicle → Vehicle │                                                           │
 └─────────────────────────────────────────────────────────────────────────────────────┘
                                         │
@@ -287,8 +287,8 @@
   │    │  Access Record                                          │ │
   │    │  • status: WAITING                                      │ │
   │    │  • type: MANUALLY / RESERVATION / TEST                  │ │
-  │    │  • typeSubject: CLIENTE / FORNITORE                     │ │
-  │    │  • Links: Vehicle, Driver, Subject, Vector              │ │
+  │    │  • cliente e/o fornitore (facoltativi)                  │ │
+  │    │  • Links: Vehicle, Driver, Customer, Supplier, Vector   │ │
   │    └─────────────────────────────────────────────────────────┘ │
   └──────────────────────────────┬──────────────────────────────────┘
                                  │
@@ -485,7 +485,7 @@
 ┌─────────────────────────────────────────────────────────────────────────────────────┐
 │  /api/anagrafic                     [Gestione Anagrafiche]                          │
 ├─────────────────────────────────────────────────────────────────────────────────────┤
-│  CRUD per ogni entità: subject, vector, driver, vehicle, material, operator         │
+│  CRUD per ogni entità: customer, supplier, vector, driver, vehicle, material        │
 │                                                                                      │
 │  GET    /{entity}           🔒 AUTH     → Lista con paginazione e filtri            │
 │  GET    /{entity}/{id}      🔒 AUTH     → Dettaglio record                          │
@@ -608,7 +608,8 @@ Legenda:  🔓 PUBLIC = Nessuna autenticazione richiesta
 │   │
 │   ├── router/                      # API Routers
 │   │   ├── anagrafic/              # CRUD dati anagrafici
-│   │   │   ├── subject.py          # Clienti/Fornitori
+│   │   │   ├── customer.py         # Clienti
+│   │   │   ├── supplier.py         # Fornitori
 │   │   │   ├── vector.py           # Trasportatori
 │   │   │   ├── driver.py           # Autisti
 │   │   │   ├── vehicle.py          # Veicoli
@@ -735,7 +736,8 @@ config.json
     │   └── local_port: 80
     │
     └── use_anagrafic:                        # Feature flags
-        ├── subject: true
+        ├── customer: true
+        ├── supplier: true
         ├── vector: true
         ├── driver: true
         ├── material: true
@@ -769,13 +771,13 @@ config.json
                                           │
                                           ▼ *
 ┌───────────┐    1          *    ┌───────────────┐    *          1    ┌───────────┐
-│  SUBJECT  │◄───────────────────│    ACCESS     │───────────────────►│  VECTOR   │
+│ CUSTOMER/ │◄───────────────────│    ACCESS     │───────────────────►│  VECTOR   │
 │───────────│                    │───────────────│                    │───────────│
 │ id        │                    │ id            │                    │ id        │
 │ social_   │                    │ number_in_out │                    │ social_   │
 │ reason    │                    │ status        │                    │ reason    │
 │ telephone │                    │ type          │                    │ telephone │
-│ cfpiva    │                    │ typeSubject   │                    │ cfpiva    │
+│ cfpiva    │                    │ idCustomer    │                    │ cfpiva    │
 └───────────┘                    │ badge         │                    └───────────┘
                                  │ selected      │
                                  │ hidden        │

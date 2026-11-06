@@ -31,16 +31,27 @@ class User(Base):
     lock_records = relationship("LockRecord", back_populates="user", cascade="all, delete")
     weighings = relationship("Weighing", back_populates="user", cascade="all, delete")
 
-# Model for Subject table
-class Subject(Base):
-    __tablename__ = 'subject'
+# Model for Customer table (clienti)
+class Customer(Base):
+    __tablename__ = 'customer'
     id = Column(Integer, primary_key=True, index=True)
     social_reason = Column(String(collation="NOCASE"), index=True, unique=True)
     telephone = Column(String(collation="NOCASE"), unique=True, nullable=True)
     cfpiva = Column(String(collation="NOCASE"), unique=True, nullable=True)
     date_created = Column(DateTime, server_default=func.now(), default=datetime.now)
 
-    accesses = relationship("Access", back_populates="subject", cascade="all, delete")
+    accesses = relationship("Access", back_populates="customer", cascade="all, delete")
+
+# Model for Supplier table (fornitori)
+class Supplier(Base):
+    __tablename__ = 'supplier'
+    id = Column(Integer, primary_key=True, index=True)
+    social_reason = Column(String(collation="NOCASE"), index=True, unique=True)
+    telephone = Column(String(collation="NOCASE"), unique=True, nullable=True)
+    cfpiva = Column(String(collation="NOCASE"), unique=True, nullable=True)
+    date_created = Column(DateTime, server_default=func.now(), default=datetime.now)
+
+    accesses = relationship("Access", back_populates="supplier", cascade="all, delete")
 
 # Model for Vector table
 class Vector(Base):
@@ -127,10 +138,6 @@ class WeighingPicture(Base):
 
     weighing = relationship("Weighing", back_populates="weighing_pictures")
 
-class TypeSubjectEnum(PyEnum):
-    CUSTOMER = "Cliente"
-    SUPPLIER = "Fornitore"
-
 class AccessStatus(PyEnum):
     WAITING = "Attesa"
     OPEN = "Aperto"
@@ -185,8 +192,8 @@ class WeighingTerminal(Base):
 class Access(Base):
     __tablename__ = 'access'
     id = Column(Integer, primary_key=True, index=True)
-    typeSubject = Column(Enum(TypeSubjectEnum), default=None, nullable=True)
-    idSubject = Column(Integer, ForeignKey('subject.id'))
+    idCustomer = Column(Integer, ForeignKey('customer.id'), nullable=True)
+    idSupplier = Column(Integer, ForeignKey('supplier.id'), nullable=True)
     idVector = Column(Integer, ForeignKey('vector.id'))
     idDriver = Column(Integer, ForeignKey('driver.id'))
     idVehicle = Column(Integer, ForeignKey('vehicle.id'))
@@ -203,7 +210,8 @@ class Access(Base):
     mode = Column(Enum(AccessMode), default=AccessMode.STANDARD, nullable=True)
 
     # Relationships
-    subject = relationship("Subject", back_populates="accesses")
+    customer = relationship("Customer", back_populates="accesses")
+    supplier = relationship("Supplier", back_populates="accesses")
     vector = relationship("Vector", back_populates="accesses")
     driver = relationship("Driver", back_populates="accesses")
     vehicle = relationship("Vehicle", back_populates="accesses")
@@ -253,8 +261,8 @@ class InOut(Base):
     __tablename__ = 'in_out'
     id = Column(Integer, primary_key=True, index=True)
     idAccess = Column(Integer, ForeignKey('access.id'))
-    typeSubject = Column(Enum(TypeSubjectEnum), default=None, nullable=True)
-    idSubject = Column(Integer, ForeignKey('subject.id'), nullable=True)
+    idCustomer = Column(Integer, ForeignKey('customer.id'), nullable=True)
+    idSupplier = Column(Integer, ForeignKey('supplier.id'), nullable=True)
     idVector = Column(Integer, ForeignKey('vector.id'), nullable=True)
     idDriver = Column(Integer, ForeignKey('driver.id'), nullable=True)
     idMaterial = Column(Integer, ForeignKey('material.id'), nullable=True)
@@ -267,7 +275,8 @@ class InOut(Base):
 
     # Relationships
     access = relationship("Access", back_populates="in_out")
-    subject = relationship("Subject", foreign_keys=[idSubject])
+    customer = relationship("Customer", foreign_keys=[idCustomer])
+    supplier = relationship("Supplier", foreign_keys=[idSupplier])
     vector = relationship("Vector", foreign_keys=[idVector])
     driver = relationship("Driver", foreign_keys=[idDriver])
     material = relationship("Material", back_populates="in_out")
@@ -316,7 +325,8 @@ class LockRecord(Base):
 # Dictionary of models to map table names to model classes
 table_models = {
     'user': User,
-    'subject': Subject,
+    'customer': Customer,
+    'supplier': Supplier,
     'vector': Vector,
     'driver': Driver,
     'vehicle': Vehicle,
@@ -332,17 +342,18 @@ table_models = {
 }
 
 upload_file_datas_required_columns = {
-    "subject": {"social_reason": str, "telephone": str, "cfpiva": str},
+    "customer": {"social_reason": str, "telephone": str, "cfpiva": str},
+    "supplier": {"social_reason": str, "telephone": str, "cfpiva": str},
     "vector": {"social_reason": str, "telephone": str, "cfpiva": str},
     "driver": {"social_reason": str, "telephone": str},
     "vehicle": {"plate": str, "description": str, "tare": int},
     "material": {"description": str},
     "operator": {"description": str},
-    "access": {"typeSocialReason": int, "idSocialReason": int, "idVector": int, "idVehicle": int, "number_in_out": int, "note": str, "idCardRegistry": int},
+    "access": {"idCustomer": int, "idSupplier": int, "idVector": int, "idVehicle": int, "number_in_out": int, "note": str, "idCardRegistry": int},
     "weighing-terminal": {"type": str, "id": str, "bil": str, "datetime1": str, "date1": str, "time1": str, "datetime2": str, "date2": str, "time2": str, "prog1": str, "prog2": str, "badge": str, "plate": str, "customer": str, "supplier": str, "material": str, "notes1": str, "notes2": str, "weight1": int, "pid1": str, "weight2": int, "pid2": str, "net_weight": int}
 }
 
-instances = [User, Subject, Vector, Driver, Vehicle, Material, Operator, Weighing, WeighingPicture, Access, LockRecord, InOut, WeighingTerminal, CardRegistry]
+instances = [User, Customer, Supplier, Vector, Driver, Vehicle, Material, Operator, Weighing, WeighingPicture, Access, LockRecord, InOut, WeighingTerminal, CardRegistry]
 
 
 def sync_database_columns():
@@ -619,6 +630,13 @@ def migrate_in_out_anagrafiche_columns():
 
             existing = {row[1] for row in conn.execute(text("PRAGMA table_info('in_out')")).fetchall()}
 
+            access_cols = {row[1] for row in conn.execute(text("PRAGMA table_info('access')")).fetchall()}
+            # Database precedenti alla separazione clienti/fornitori: servono le vecchie colonne
+            # typeSubject/idSubject anche in in_out, poi migrate_subject_to_customer_supplier le converte
+            legacy_subject = 'idSubject' in access_cols
+            if not legacy_subject:
+                return
+
             columns_to_add = {
                 'typeSubject': 'TEXT NULL',
                 'idSubject': 'INTEGER NULL',
@@ -793,6 +811,70 @@ def migrate_in_out_idCardRegistry():
         lb_log.error(f"Errore durante la migrazione in_out.idCardRegistry: {e}")
 
 
+def migrate_subject_to_customer_supplier():
+    """
+    Migrazione dalla vecchia anagrafica unica 'subject' (con il tipo CUSTOMER/SUPPLIER salvato
+    su ogni access/in_out) alle due anagrafiche separate 'customer' e 'supplier'.
+    - una ditta usata solo come cliente diventa un cliente, solo come fornitore un fornitore;
+    - una ditta usata in entrambi i modi, o mai usata, viene copiata in tutte e due;
+    - access e in_out puntano al cliente (idCustomer) o al fornitore (idSupplier) corrispondente.
+    Le vecchie colonne e la tabella subject restano nel database (SQLite) ma non sono più usate.
+    Viene eseguita una sola volta: solo se esiste 'subject' e clienti e fornitori sono vuoti.
+    """
+    try:
+        with engine.connect() as conn:
+            tables = {row[0] for row in conn.execute(text("SELECT name FROM sqlite_master WHERE type='table'")).fetchall()}
+            if 'subject' not in tables or 'customer' not in tables or 'supplier' not in tables:
+                return
+            if conn.execute(text("SELECT COUNT(*) FROM customer")).scalar() or conn.execute(text("SELECT COUNT(*) FROM supplier")).scalar():
+                return
+            if not conn.execute(text("SELECT COUNT(*) FROM subject")).scalar():
+                return
+
+            def cols(table):
+                return {row[1] for row in conn.execute(text(f"PRAGMA table_info('{table}')")).fetchall()} if table in tables else set()
+
+            # Tabelle con riferimenti al soggetto (typeSubject + idSubject)
+            refs = [t for t in ('access', 'in_out') if {'typeSubject', 'idSubject'} <= cols(t)]
+
+            usage = {}  # idSubject -> set di tipi ('CUSTOMER'/'SUPPLIER')
+            for t in refs:
+                for id_subject, type_subject in conn.execute(text(
+                    f'SELECT DISTINCT idSubject, typeSubject FROM "{t}" WHERE idSubject IS NOT NULL'
+                )).fetchall():
+                    # tipo mancante: la ditta resta valida per entrambi
+                    usage.setdefault(id_subject, set()).update([type_subject] if type_subject in ('CUSTOMER', 'SUPPLIER') else ['CUSTOMER', 'SUPPLIER'])
+
+            subjects = conn.execute(text("SELECT id, social_reason, telephone, cfpiva, date_created FROM subject")).fetchall()
+            n_customers = n_suppliers = 0
+            for sid, social_reason, telephone, cfpiva, date_created in subjects:
+                kinds = usage.get(sid) or {'CUSTOMER', 'SUPPLIER'}
+                params = {"id": sid, "social_reason": social_reason, "telephone": telephone, "cfpiva": cfpiva, "date_created": date_created}
+                # stesso id del vecchio soggetto: i riferimenti si convertono senza tabelle di appoggio
+                if 'CUSTOMER' in kinds:
+                    conn.execute(text("INSERT INTO customer (id, social_reason, telephone, cfpiva, date_created) VALUES (:id, :social_reason, :telephone, :cfpiva, :date_created)"), params)
+                    n_customers += 1
+                if 'SUPPLIER' in kinds:
+                    conn.execute(text("INSERT INTO supplier (id, social_reason, telephone, cfpiva, date_created) VALUES (:id, :social_reason, :telephone, :cfpiva, :date_created)"), params)
+                    n_suppliers += 1
+
+            for t in refs:
+                conn.execute(text(f"""
+                    UPDATE "{t}" SET
+                        idCustomer = CASE WHEN typeSubject = 'SUPPLIER' THEN NULL ELSE idSubject END,
+                        idSupplier = CASE WHEN typeSubject = 'SUPPLIER' THEN idSubject ELSE NULL END
+                    WHERE idSubject IS NOT NULL
+                """))
+                # i vecchi riferimenti non vengono più letti: li svuoto per evitare ambiguità
+                conn.execute(text(f'UPDATE "{t}" SET idSubject = NULL, typeSubject = NULL'))
+
+            if 'lock_record' in tables:
+                conn.execute(text("DELETE FROM lock_record WHERE table_name = 'subject'"))
+            conn.commit()
+            lb_log.info(f"Migrazione soggetti: {n_customers} clienti e {n_suppliers} fornitori creati da {len(subjects)} soggetti")
+    except Exception as e:
+        lb_log.error(f"Errore durante la migrazione soggetti -> clienti/fornitori: {e}")
+
 # Esegui migrazione per stati deprecati
 migrate_called_status()
 
@@ -810,6 +892,9 @@ sync_database_columns()
 
 # Create tables (crea tabelle mancanti)
 Base.metadata.create_all(engine)
+
+# Separazione dell'anagrafica soggetti in clienti e fornitori (dopo sync e create)
+migrate_subject_to_customer_supplier()
 
 # Esegui migrazione access.badge → idCardRegistry (dopo sync e create)
 migrate_access_badge_to_idCardRegistry()

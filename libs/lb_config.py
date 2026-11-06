@@ -27,6 +27,29 @@ def saveconfig():
 		# Registra un messaggio di errore se si verifica un problema durante il salvataggio del file di configurazione.
 		lb_log.error("error saving : config.json - " + str(e))
 
+def migrate_subject_config(config):
+	"""
+	L'anagrafica unica 'subject' (cliente/fornitore) è stata separata in 'customer' e 'supplier'.
+	Converte le chiavi di configurazione: use_anagrafic.subject e totem_anagrafiche.subject
+	diventano customer/supplier con lo stesso valore; default_type_subject non serve più.
+	Restituisce True se la configurazione è stata modificata.
+	"""
+	app_api = config.get("app_api") if isinstance(config, dict) else None
+	if not isinstance(app_api, dict):
+		return False
+	changed = False
+	for section in ("use_anagrafic", "totem_anagrafiche"):
+		values = app_api.get(section)
+		if isinstance(values, dict) and "subject" in values:
+			value = values.pop("subject")
+			values.setdefault("customer", value)
+			values.setdefault("supplier", value)
+			changed = True
+	if "default_type_subject" in app_api:
+		del app_api["default_type_subject"]
+		changed = True
+	return changed
+
 def readconfig():
 	# Funzione per leggere e caricare le configurazioni da un file JSON specificato.
 	# Questa funzione legge il file di configurazione e aggiorna le variabili globali g_config
@@ -88,6 +111,10 @@ def readconfig():
 			# Registra un messaggio di errore se il file di backup della configurazione non esiste.
 			lb_log.error("missing backup")
 
+
+	if migrate_subject_config(g_config):
+		lb_log.info("config: anagrafica soggetto separata in clienti e fornitori")
+		saveconfig()
 
 	if "locale" in g_config:
 		g_tz = tz.gettz(g_config["locale"]["timezone"])

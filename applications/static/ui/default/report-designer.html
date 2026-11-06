@@ -1467,10 +1467,12 @@
                             <label>Seleziona Variabile da Inserire</label>
                             <select onchange="insertQuickVariable(this.value); this.value='';">
                                 <option value="">-- Seleziona variabile --</option>
-                                <option value="{{ typeSubject }}">{{ typeSubject }} - Tipo SOGGETTO</option>
-                                <option value="{{ subject.social_reason }}">{{ subject.social_reason }} - Ragione sociale SOGGETTO</option>
-                                <option value="{{ subject.telephone }}">{{ subject.telephone }} - Telefono SOGGETTO</option>
-                                <option value="{{ subject.cfpiva }}">{{ subject.cfpiva }} - CF/P.iVA SOGGETTO</option>
+                                <option value="{{ customer.social_reason }}">{{ customer.social_reason }} - Ragione sociale CLIENTE</option>
+                                <option value="{{ customer.telephone }}">{{ customer.telephone }} - Telefono CLIENTE</option>
+                                <option value="{{ customer.cfpiva }}">{{ customer.cfpiva }} - CF/P.iVA CLIENTE</option>
+                                <option value="{{ supplier.social_reason }}">{{ supplier.social_reason }} - Ragione sociale FORNITORE</option>
+                                <option value="{{ supplier.telephone }}">{{ supplier.telephone }} - Telefono FORNITORE</option>
+                                <option value="{{ supplier.cfpiva }}">{{ supplier.cfpiva }} - CF/P.iVA FORNITORE</option>
                                 <option value="{{ vector.social_reason }}">{{ vector.social_reason }} - Ragione sociale VETTORE</option>
                                 <option value="{{ vector.telephone }}">{{ vector.telephone }} - Telefono VETTORE</option>
                                 <option value="{{ vector.cfpiva }}">{{ vector.cfpiva }} - CF/P.Iva VETTORE</option>

@@ -1,6 +1,5 @@
 {
     "app_api": {
-        "default_type_subject": "SUPPLIER",
         "delete_pending_accesses_at_midnight": false,
         "mode": "AUTOMATIC",
         "panel": {
@@ -58,9 +57,10 @@
         "test_mode": false,
         "totem_anagrafiche": {
             "card": false,
+            "customer": false,
             "driver": false,
             "material": false,
-            "subject": false,
+            "supplier": false,
             "vector": false,
             "vehicle": false
         },
@@ -69,12 +69,13 @@
             "domain": "http://localhost:8000/api"
         },
         "use_anagrafic": {
+            "customer": true,
             "document_reference": true,
             "driver": true,
             "material": true,
             "note": true,
             "operator": false,
-            "subject": true,
+            "supplier": true,
             "vector": true,
             "vehicle": true,
             "weighing_pictures": true,

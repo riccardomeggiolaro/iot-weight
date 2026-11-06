@@ -132,7 +132,8 @@ class ModuleUpdating:
 					session.query(InOut)
 					.options(
 						joinedload(InOut.access).joinedload(Access.vehicle),
-						joinedload(InOut.subject),
+						joinedload(InOut.customer),
+						joinedload(InOut.supplier),
 						joinedload(InOut.vector),
 						joinedload(InOut.driver),
 						joinedload(InOut.material),
@@ -166,8 +167,8 @@ class ModuleUpdating:
 			data["in_out"] = {
 				"id": in_out.id,
 				"idAccess": in_out.idAccess,
-				"type_subject": in_out.typeSubject.value if in_out.typeSubject else None,
-				"subject": in_out.subject.social_reason if in_out.subject else None,
+				"customer": in_out.customer.social_reason if in_out.customer else None,
+				"supplier": in_out.supplier.social_reason if in_out.supplier else None,
 				"vector": in_out.vector.social_reason if in_out.vector else None,
 				"driver": in_out.driver.social_reason if in_out.driver else None,
 				"plate": access.vehicle.plate if access and access.vehicle else None,

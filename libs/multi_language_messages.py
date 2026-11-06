@@ -1,13 +1,23 @@
 multi_language_data = {
     "table_names": {
-        "subject": {
+        "customer": {
             "it": {
-                "with_article": "il soggetto",
-                "without_article": "soggetto"  
+                "with_article": "il cliente",
+                "without_article": "cliente"
             },
             "en": {
-                "with_article": "the subject",
-                "without_article": "subject"
+                "with_article": "the customer",
+                "without_article": "customer"
+            }
+        },
+        "supplier": {
+            "it": {
+                "with_article": "il fornitore",
+                "without_article": "fornitore"
+            },
+            "en": {
+                "with_article": "the supplier",
+                "without_article": "supplier"
             }
         },
         "vector": {

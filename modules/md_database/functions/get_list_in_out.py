@@ -15,7 +15,8 @@ def get_list_in_out(
     excludeTestWeighing=False,
     filterDateAccess=False,
     get_is_last=False,
-    load_subject=True,
+    load_customer=True,
+    load_supplier=True,
     load_vector=True,
     load_driver=True,
     load_vehicle=True,
@@ -37,8 +38,10 @@ def get_list_in_out(
         query = session.query(InOut)
 
         access_options = []
-        if load_subject:
-            access_options.append(selectinload(Access.subject))
+        if load_customer:
+            access_options.append(selectinload(Access.customer))
+        if load_supplier:
+            access_options.append(selectinload(Access.supplier))
         if load_vector:
             access_options.append(selectinload(Access.vector))
         if load_driver:
@@ -89,8 +92,10 @@ def get_list_in_out(
         
         if load_material:
             load_options.append(selectinload(InOut.material))
-        if load_subject:
-            load_options.append(selectinload(InOut.subject))
+        if load_customer:
+            load_options.append(selectinload(InOut.customer))
+        if load_supplier:
+            load_options.append(selectinload(InOut.supplier))
         if load_vector:
             load_options.append(selectinload(InOut.vector))
         if load_driver:

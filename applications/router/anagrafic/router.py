@@ -1,7 +1,8 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.encoders import jsonable_encoder
 from applications.router.anagrafic.material import MaterialRouter
-from applications.router.anagrafic.subject import SubjectRouter
+from applications.router.anagrafic.customer import CustomerRouter
+from applications.router.anagrafic.supplier import SupplierRouter
 from applications.router.anagrafic.vector import VectorRouter
 from applications.router.anagrafic.driver import DriverRouter
 from applications.router.anagrafic.vehicle import VehicleRouter
@@ -27,7 +28,8 @@ class AnagraficRouter:
 
 		self.router = APIRouter(prefix='/anagrafic')
 
-		subject = SubjectRouter()
+		customer = CustomerRouter()
+		supplier = SupplierRouter()
 		vector = VectorRouter()
 		driver = DriverRouter()
 		vehicle = VehicleRouter()
@@ -37,7 +39,8 @@ class AnagraficRouter:
 		weighing_terminal = WeighingTerminalRouter()
 		card_registry = CardRegistryRouter()
 
-		self.router.include_router(subject.router, prefix='/subject', tags=['subject'])
+		self.router.include_router(customer.router, prefix='/customer', tags=['customer'])
+		self.router.include_router(supplier.router, prefix='/supplier', tags=['supplier'])
 		self.router.include_router(vector.router, prefix='/vector', tags=['vector'])
 		self.router.include_router(driver.router, prefix='/driver', tags=['driver'])
 		self.router.include_router(vehicle.router, prefix='/vehicle', tags=['vehicle'])

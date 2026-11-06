@@ -1,4 +1,4 @@
-from modules.md_database.md_database import SessionLocal, Subject, Vector, Driver, Vehicle, Material, Access, AccessStatus, TypeSubjectEnum, TypeAccess, AccessMode, CardRegistry
+from modules.md_database.md_database import SessionLocal, Customer, Supplier, Vector, Driver, Vehicle, Material, Access, AccessStatus, TypeAccess, AccessMode, CardRegistry
 from modules.md_database.interfaces.access import AddAccessDTO
 from modules.md_database.functions.get_access_by_vehicle_id_if_uncompete import get_access_by_vehicle_id_if_uncomplete
 from modules.md_database.functions.get_access_by_identify_if_uncomplete import get_access_by_identify_if_uncomplete
@@ -18,8 +18,8 @@ def add_access(data: AddAccessDTO, status: Optional[AccessStatus] = None):
         try:
             mode = AccessMode[data.mode] if data.mode else AccessMode.STANDARD
             add_access = {
-                "typeSubject": TypeSubjectEnum[data.typeSubject],
-                "idSubject": data.subject.id,
+                "idCustomer": data.customer.id,
+                "idSupplier": data.supplier.id,
                 "idVector": data.vector.id,
                 "idDriver": data.driver.id,
                 "idVehicle": data.vehicle.id,
@@ -33,19 +33,33 @@ def add_access(data: AddAccessDTO, status: Optional[AccessStatus] = None):
                 "mode": mode
             }
 
-            current_model = Subject
-            if not data.subject.id:
-                add_subject = {
-                    "social_reason": data.subject.social_reason if data.subject.social_reason != "" else None,
-                    "telephone": data.subject.telephone if data.subject.telephone != "" else None,
-                    "cfpiva": data.subject.cfpiva if data.subject.cfpiva != "" else None
+            current_model = Customer
+            if not data.customer.id:
+                add_customer = {
+                    "social_reason": data.customer.social_reason if data.customer.social_reason != "" else None,
+                    "telephone": data.customer.telephone if data.customer.telephone != "" else None,
+                    "cfpiva": data.customer.cfpiva if data.customer.cfpiva != "" else None
                 }
-                if has_non_none_value(add_subject):
-                    data_to_check = data.subject.dict()
-                    subject = current_model(**add_subject)
-                    session.add(subject)
+                if has_non_none_value(add_customer):
+                    data_to_check = data.customer.dict()
+                    customer = current_model(**add_customer)
+                    session.add(customer)
                     session.flush()
-                    add_access["idSubject"] = subject.id
+                    add_access["idCustomer"] = customer.id
+
+            current_model = Supplier
+            if not data.supplier.id:
+                add_supplier = {
+                    "social_reason": data.supplier.social_reason if data.supplier.social_reason != "" else None,
+                    "telephone": data.supplier.telephone if data.supplier.telephone != "" else None,
+                    "cfpiva": data.supplier.cfpiva if data.supplier.cfpiva != "" else None
+                }
+                if has_non_none_value(add_supplier):
+                    data_to_check = data.supplier.dict()
+                    supplier = current_model(**add_supplier)
+                    session.add(supplier)
+                    session.flush()
+                    add_access["idSupplier"] = supplier.id
 
             current_model = Vector
             if not data.vector.id:

@@ -19,7 +19,8 @@ def get_list_accesses(
     get_is_last_for_vehicle=False,
     permanentIfWeight1=False,
     exclude_manually_access=False,
-    load_subject=True,
+    load_customer=True,
+    load_supplier=True,
     load_vector=True,
     load_driver=True,
     load_vehicle=True,
@@ -47,8 +48,10 @@ def get_list_accesses(
         query = session.query(Access)
 
         access_options = []
-        if load_subject:
-            access_options.append(selectinload(Access.subject))
+        if load_customer:
+            access_options.append(selectinload(Access.customer))
+        if load_supplier:
+            access_options.append(selectinload(Access.supplier))
         if load_vector:
             access_options.append(selectinload(Access.vector))
         if load_driver:
@@ -91,8 +94,10 @@ def get_list_accesses(
             selectinload(InOut.weight1).options(*weighing1_options),
             selectinload(InOut.weight2).options(*weighing2_options)
         ]
-        if load_subject:
-            inout_options.append(selectinload(InOut.subject))
+        if load_customer:
+            inout_options.append(selectinload(InOut.customer))
+        if load_supplier:
+            inout_options.append(selectinload(InOut.supplier))
         if load_vector:
             inout_options.append(selectinload(InOut.vector))
         if load_driver:
