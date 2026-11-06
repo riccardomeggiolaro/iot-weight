@@ -225,8 +225,29 @@ function renderSection(el, conf, tab) {
     body.className = 'form-grid';
 
     const inputs = {};
-    inputs.vehicle = anagraficInput({ name: 'vehicle', field: 'plate', label: 'Targa', upper: true, required: true, value: rec?.vehicle, secondary: r => r.description });
+    // Tara e soglia massima appartengono al mezzo: si precompilano con i valori del mezzo
+    // scelto e, se cambiate, vengono salvate sulla sua anagrafica.
+    const LIMITS = [['tare', 'Tara (kg)'], ['max_threshold', 'Soglia massima (kg)']];
+    let limitsBase = { tare: rec?.vehicle?.tare ?? null, max_threshold: rec?.vehicle?.max_threshold ?? null };
+    const limitsDirty = {};
+    inputs.vehicle = anagraficInput({
+      name: 'vehicle', field: 'plate', label: 'Targa', upper: true, required: true, value: rec?.vehicle, secondary: r => r.description,
+      onSelect: v => {
+        limitsBase = { tare: v?.tare ?? null, max_threshold: v?.max_threshold ?? null };
+        for (const [k] of LIMITS) if (!limitsDirty[k]) limitInputs[k].value = limitsBase[k] ?? '';
+      },
+    });
     body.appendChild(inputs.vehicle.el);
+    const limitInputs = {};
+    for (const [k, label] of LIMITS) {
+      const f = document.createElement('label');
+      f.className = 'field';
+      f.innerHTML = `<span>${esc(label)} <em class="muted">(facoltativo)</em></span>
+        <input class="input" type="number" name="${k}" min="1" step="1" inputmode="numeric" value="${esc(limitsBase[k] ?? '')}">`;
+      limitInputs[k] = f.querySelector('input');
+      limitInputs[k].addEventListener('input', () => { limitsDirty[k] = true; });
+      body.appendChild(f);
+    }
     if (plant.config?.use_badge) {
       inputs.card = anagraficInput({ name: 'card-registry', field: 'number', label: 'Tessera', upper: true, allowNew: false, value: rec?.card_registry, secondary: r => r.code });
       body.appendChild(inputs.card.el);
@@ -260,7 +281,7 @@ function renderSection(el, conf, tab) {
     }
     const hint = document.createElement('p');
     hint.className = 'muted form-hint';
-    hint.innerHTML = 'Se scrivi un nome che non esiste ancora (<span class="ai-tag new">nuovo</span>), viene aggiunto alle anagrafiche al salvataggio.';
+    hint.innerHTML = 'Se scrivi un nome che non esiste ancora (<span class="ai-tag new">nuovo</span>), viene aggiunto alle anagrafiche al salvataggio. Tara e soglia massima vengono salvate sul mezzo e valgono per tutte le sue prenotazioni.';
     body.appendChild(hint);
 
     const title = isEdit ? `Modifica ${conf.transit ? 'transito' : 'prenotazione'}${rec.vehicle?.plate ? ' ' + rec.vehicle.plate : ''}` : conf.create;
@@ -273,6 +294,17 @@ function renderSection(el, conf, tab) {
         const payload = {};
         const v = inputs.vehicle.value(isEdit);
         if (v !== undefined) payload.vehicle = v;
+        const limits = {};
+        for (const [k] of LIMITS) limits[k] = limitInputs[k].value === '' ? null : Math.round(Number(limitInputs[k].value));
+        if (limits.tare && limits.max_threshold && limits.tare >= limits.max_threshold) {
+          throw new Error('La tara deve essere inferiore alla soglia massima');
+        }
+        for (const [k] of LIMITS) {
+          if (limits[k] === (limitsBase[k] ?? null)) continue;
+          if (!payload.vehicle) payload.vehicle = { id: rec?.vehicle?.id ?? null };
+          if (payload.vehicle.id === -1) continue; // targa tolta: niente da salvare sul mezzo
+          payload.vehicle[k] = limits[k] ?? -1;
+        }
         for (const l of LINKS) {
           if (!inputs[l.key]) continue;
           const val = inputs[l.key].value(isEdit);
