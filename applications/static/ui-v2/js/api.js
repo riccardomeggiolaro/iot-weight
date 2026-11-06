@@ -62,6 +62,27 @@ export async function openProtectedFile(path) {
   }
 }
 
+/** Utente collegato (livello: 1 sola lettura, 2 scrittura, 3 admin, 4 super admin). */
+let mePromise = null;
+export function getMe() {
+  if (!mePromise) mePromise = api('/api/auth/me').catch(err => { mePromise = null; throw err; });
+  return mePromise;
+}
+
+/** Invio di un file (multipart) a un endpoint. */
+export async function uploadFile(path, file, field = 'file') {
+  const fd = new FormData();
+  fd.append(field, file);
+  const res = await fetch(path, { method: 'POST', headers: { 'Authorization': `Bearer ${getToken()}` }, body: fd });
+  if (res.status === 401) { logout(); throw new ApiError('Sessione scaduta', 401); }
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    const detail = data?.detail;
+    throw new ApiError(typeof detail === 'string' ? detail : `Errore ${res.status}`, res.status, data);
+  }
+  return data;
+}
+
 export function wsUrl(path) {
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
   return `${proto}://${location.host}${path}`;

@@ -6,13 +6,14 @@ import { esc, formatKg, toast } from './ui.js';
 import { renderPesa } from './views/pesa.js';
 import { renderImpianto } from './views/impianto.js';
 import { renderPlaceholder } from './views/placeholder.js';
+import { renderAnagrafiche } from './views/anagrafiche.js';
 
 if (!getToken()) logout();
 
 const ROUTES = {
   pesa:         { title: 'Pesa',         render: renderPesa },
   accessi:      { title: 'Accessi',      render: el => renderPlaceholder(el, '📋', 'Accessi e prenotazioni', 'Mezzi in impianto, prenotazioni e storico delle pesate.') },
-  anagrafiche:  { title: 'Anagrafiche',  render: el => renderPlaceholder(el, '👥', 'Anagrafiche', 'Clienti e fornitori, vettori, autisti, mezzi, materiali e badge.') },
+  anagrafiche:  { title: 'Anagrafiche',  render: renderAnagrafiche },
   impianto:     { title: 'Impianto',     render: renderImpianto },
   report:       { title: 'Report',       render: el => renderPlaceholder(el, '📊', 'Report', 'Statistiche, esportazioni e modelli di stampa.') },
   impostazioni: { title: 'Impostazioni', render: el => renderPlaceholder(el, '⚙️', 'Impostazioni', 'Configurazione guidata di pese, terminali, relè, fotocamere, stampanti e utenti.') },

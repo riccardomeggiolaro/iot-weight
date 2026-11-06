@@ -29,6 +29,10 @@ js/plant.js           stato dell'impianto: configurazione + websocket per pesa,
                       relays, message, access)
 js/ui.js              escape HTML, avvisi, formattazione
 js/views/pesa.js      schermata Pesa
+js/views/anagrafiche.js  schermata Anagrafiche (#/anagrafiche/<scheda>)
+js/data-table.js      tabella con filtri, ordinamento e paginazione lato server
+js/anagrafic-socket.js   websocket di un'anagrafica: eventi in tempo reale e blocco dei record
+css/data.css          schede, tabelle, finestre di dialogo e form
 js/views/impianto.js  vista 3D (per ora riusa /static/config3d.html)
 js/views/placeholder.js  sezioni non ancora pronte
 ```
@@ -40,7 +44,7 @@ js/views/placeholder.js  sezioni non ancora pronte
 | Pesa          | pronta: peso, mezzo, entrata/uscita, tara, zero, ristampa, foto, sbarre, attività |
 | Impianto      | vista 3D esistente |
 | Accessi       | da fare |
-| Anagrafiche   | da fare |
+| Anagrafiche   | pronta: veicoli, clienti/fornitori, vettori, materiali, autisti, tessere — ricerca, ordinamento, inserimento/modifica/eliminazione con blocco del record, import CSV/Excel, aggiornamento in tempo reale |
 | Report        | da fare |
 | Impostazioni  | da fare (configurazione guidata) |
 

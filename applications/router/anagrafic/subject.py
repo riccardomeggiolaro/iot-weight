@@ -147,7 +147,8 @@ class SubjectRouter(WebSocket):
                 if column not in df.columns:
                     df[column] = None  # Colonna assente nel file, aggiunta con valori null
                 else:
-                    df[column] = df[column].map(lambda x: convert_value(x, expected_type))
+                    # dtype=object: altrimenti pandas riconverte gli interi in decimali se ci sono celle vuote
+                    df[column] = pd.Series([convert_value(x, expected_type) for x in df[column]], index=df.index, dtype=object)
 
                     # Dopo la conversione, verifica che tutti i valori siano del tipo atteso o NaN
                     if not df[column].map(lambda x: pd.isna(x) or isinstance(x, expected_type)).all():
@@ -156,6 +157,8 @@ class SubjectRouter(WebSocket):
             # Sostituisci valori NaN, Inf e -Inf con None
             df = df.replace([np.nan, np.inf, -np.inf], None)
 
+        except HTTPException:
+            raise
         except Exception as e:
             raise HTTPException(status_code=500, detail="Error reading file") from e
 
