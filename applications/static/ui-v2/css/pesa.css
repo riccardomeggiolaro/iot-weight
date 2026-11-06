@@ -18,7 +18,11 @@
 .area-vehicle { grid-area: vehicle; }
 .area-weight { grid-area: weight; display: flex; flex-direction: column; gap: 16px; }
 .area-side { grid-area: side; display: flex; flex-direction: column; gap: 16px; }
-.pesa-grid.no-side { grid-template-columns: minmax(380px, 1fr) minmax(260px, 340px); grid-template-areas: "weight vehicle"; }
+/* senza colonna laterale peso e mezzi mantengono la loro larghezza e si centrano */
+.pesa-grid.no-side {
+  grid-template-columns: minmax(380px, calc(100% - 2 * 340px - 2 * 16px)) minmax(260px, 340px);
+  grid-template-areas: "weight vehicle"; justify-content: center;
+}
 .area-side[hidden], .area-side > .card[hidden] { display: none; }
 @media (max-width: 1180px) {
   .pesa-grid { grid-template-columns: 1fr minmax(260px, 340px); grid-template-areas: "weight vehicle" "side side"; }
