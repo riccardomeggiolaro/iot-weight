@@ -30,6 +30,7 @@ js/plant.js           stato dell'impianto: configurazione + websocket per pesa,
 js/ui.js              escape HTML, avvisi, formattazione
 js/views/pesa.js      schermata Dashboard (pesatura)
 js/views/anagrafiche.js  schermata Anagrafiche (#/anagrafiche/<scheda>)
+js/views/impostazioni*.js  schermata Impostazioni (#/impostazioni/<scheda>), una scheda per file
 js/views/prenotazioni.js schermate Prenotazioni (#/prenotazioni/<scheda>) e Pesate (#/pesate)
 js/anagrafic-input.js campo con suggerimenti per scegliere/creare un record di un'anagrafica
 js/data-table.js      tabella con filtri, ordinamento e paginazione lato server
@@ -49,7 +50,7 @@ js/views/placeholder.js  sezioni non ancora pronte
 | Pesate        | pronta (voce di menu a sé): una riga per pesata, filtri, dettaglio con foto, PDF, modifica dati, eliminazione dell'ultima pesata, export Excel/PDF |
 | Anagrafiche   | pronta: veicoli, clienti, fornitori, vettori, materiali, autisti, tessere — ricerca, ordinamento, inserimento/modifica/eliminazione con blocco del record, codice del gestionale, archiviazione (Elimina archivia le anagrafiche già usate; vista Archiviati con Ripristina), import CSV/Excel, aggiornamento in tempo reale |
 | Report        | da fare |
-| Impostazioni  | da fare (configurazione guidata) |
+| Impostazioni  | pronta: Generali, Campi dei dati, Pese e dispositivi (collegamenti, pese, documenti, fotocamere, relè, RFID), Stampe ed export, Totem, Utenti, Integrazioni (cartella remota, pannello, sirena), Manutenzione (configurazione, backup, riavvio) |
 
 ## Scorciatoie (Dashboard)
 

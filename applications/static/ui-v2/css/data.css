@@ -194,3 +194,30 @@ textarea.input { resize: vertical; font: inherit; }
 .device-status.ok { color: var(--ok); font-weight: 600; }
 .device-status.err { color: var(--err); font-weight: 600; }
 .settings-actions.inline { padding: 12px 0 16px; }
+
+/* Pese e dispositivi */
+.pese-list { display: flex; flex-direction: column; gap: 16px; }
+.settings-label .badge { margin-left: 6px; vertical-align: middle; }
+.btn.small { padding: 4px 10px; font-size: 13px; }
+.node-form .form-section { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 18px 0 8px; }
+.node-form .form-section:first-child { margin-top: 0; }
+.checks { display: flex; flex-direction: column; gap: 8px; }
+.advanced { margin-top: 10px; }
+.advanced summary { cursor: pointer; font-weight: 600; color: var(--text-muted); font-size: 14px; margin-bottom: 8px; }
+.kinds .input { padding: 6px 8px; }
+.kinds .copies { width: 70px; }
+.kinds input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--accent); }
+.mini-list { display: flex; flex-direction: column; gap: 8px; }
+.mini-row { display: grid; grid-template-columns: 1fr 1.2fr 90px auto; gap: 8px; align-items: center; }
+.mini-row.cam { grid-template-columns: 1.4fr 1.4fr auto auto; }
+.mini-row .input { padding: 7px 10px; }
+.relay-event { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
+.relay-h { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 6px; font-size: 14px; }
+.relay-event .mini-list:empty::after { content: "Nessun relè"; color: var(--text-muted); font-size: 13px; }
+.conn-type { margin-bottom: 14px; }
+@media (max-width: 720px) {
+  .mini-row, .mini-row.cam { grid-template-columns: 1fr 1fr; }
+  .kinds th:nth-child(4), .kinds td:nth-child(4) { min-width: 120px; }
+}
+.form-grid > .check { align-self: end; min-height: 42px; }
+.form-grid > .check.wide { grid-column: 1 / -1; }
