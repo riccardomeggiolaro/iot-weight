@@ -150,7 +150,8 @@ export function createDataTable(el, opts) {
   }
 
   reload();
-  return { reload, get filters() { return { ...state.filters }; }, get sort() { return state.sort; }, destroy() { state.seq++; clearTimeout(filterTimer); } };
+  // search(): riparte dalla prima pagina (es. dopo un cambio dei filtri esterni alla tabella)
+  return { reload, search() { state.page = 0; return reload(); }, get rows() { return state.rows; }, get filters() { return { ...state.filters }; }, get sort() { return state.sort; }, destroy() { state.seq++; clearTimeout(filterTimer); } };
 }
 
 export function get(obj, path) {

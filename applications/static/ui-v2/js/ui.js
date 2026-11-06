@@ -75,6 +75,15 @@ export function openDialog({ title, body = '', actions = [{ label: 'Chiudi', val
     dlg.addEventListener('close', () => { dlg.remove(); onClose?.(result); resolve(result); });
     dlg.addEventListener('cancel', e => { if (busy) e.preventDefault(); });
     dlg.querySelector('.dialog-x').addEventListener('click', () => { if (!busy) close(null); });
+    // Clic fuori dalla finestra (sullo sfondo): chiude. Conta solo se anche la pressione
+    // è partita fuori, così trascinare una selezione di testo verso l'esterno non la chiude.
+    const outside = e => {
+      const r = dlg.getBoundingClientRect();
+      return e.target === dlg && (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom);
+    };
+    let downOutside = false;
+    dlg.addEventListener('pointerdown', e => { downOutside = outside(e); });
+    dlg.addEventListener('click', e => { if (downOutside && outside(e) && !busy) close(null); downOutside = false; });
 
     actions.forEach(a => {
       const btn = document.createElement('button');

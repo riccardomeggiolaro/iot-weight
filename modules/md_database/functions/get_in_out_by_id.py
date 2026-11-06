@@ -15,7 +15,8 @@ def get_in_out_by_id(id):
                         selectinload(Access.customer),
                         selectinload(Access.supplier),
                         selectinload(Access.vector),
-                        selectinload(Access.material)
+                        selectinload(Access.material),
+                        selectinload(Access.card_registry)
                     ),
                     selectinload(InOut.customer),
                     selectinload(InOut.supplier),

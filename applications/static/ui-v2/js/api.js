@@ -62,6 +62,24 @@ export async function openProtectedFile(path) {
   }
 }
 
+/** Scarica un file protetto (es. export xlsx/pdf) con il nome indicato dal server o quello passato. */
+export async function downloadProtectedFile(path, fallbackName) {
+  const res = await fetch(path, { headers: { 'Authorization': `Bearer ${getToken()}` } });
+  if (res.status === 401) { logout(); throw new ApiError('Sessione scaduta', 401); }
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    throw new ApiError(typeof data?.detail === 'string' ? data.detail : `Errore ${res.status}`, res.status, data);
+  }
+  const disposition = res.headers.get('Content-Disposition') || '';
+  const m = /filename\*?=(?:UTF-8'')?["']?([^"';]+)/i.exec(disposition);
+  const name = m ? decodeURIComponent(m[1]) : fallbackName;
+  const url = URL.createObjectURL(await res.blob());
+  const a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+
 /** Utente collegato (livello: 1 sola lettura, 2 scrittura, 3 admin, 4 super admin). */
 let mePromise = null;
 export function getMe() {
