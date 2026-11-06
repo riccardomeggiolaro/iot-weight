@@ -37,7 +37,13 @@ def convert_value(x, expected_type):
         return x
     # Se il tipo atteso è stringa e il valore è numerico, convertilo in stringa
     if expected_type is str and isinstance(x, (int, float)):
+        # 14000.0 (colonna letta come decimale per via di celle vuote) -> "14000"
+        if isinstance(x, float) and x.is_integer():
+            return str(int(x))
         return str(x)
+    # Una colonna intera con celle vuote viene letta da pandas come decimale (14000.0)
+    if expected_type is int and isinstance(x, float) and x.is_integer():
+        return int(x)
     return x
 
 def image_to_base64_data_uri(image_path):
