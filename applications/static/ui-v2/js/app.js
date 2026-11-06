@@ -7,13 +7,14 @@ import { renderPesa } from './views/pesa.js';
 import { renderImpianto } from './views/impianto.js';
 import { renderPlaceholder } from './views/placeholder.js';
 import { renderAnagrafiche } from './views/anagrafiche.js';
-import { renderPrenotazioni } from './views/prenotazioni.js';
+import { renderPrenotazioni, renderPesate } from './views/prenotazioni.js';
 
 if (!getToken()) logout();
 
 const ROUTES = {
   pesa:         { title: 'Pesa',         render: renderPesa },
   prenotazioni: { title: 'Prenotazioni', render: renderPrenotazioni },
+  pesate:       { title: 'Pesate',       render: renderPesate },
   anagrafiche:  { title: 'Anagrafiche',  render: renderAnagrafiche },
   impianto:     { title: 'Impianto',     render: renderImpianto },
   report:       { title: 'Report',       render: el => renderPlaceholder(el, '📊', 'Report', 'Statistiche, esportazioni e modelli di stampa.') },

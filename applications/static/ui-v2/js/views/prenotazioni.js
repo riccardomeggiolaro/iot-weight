@@ -1,5 +1,5 @@
-// Prenotazioni: schede Multiple, Permanenti, Transiti (elenco delle prenotazioni) e Pesate
-// (storico di ogni pesata). Da qui si crea, modifica, conclude ed elimina una prenotazione,
+// Prenotazioni (schede Multiple, Permanenti, Transiti) e Pesate (storico di ogni pesata, voce di menu a sé).
+// Le due sezioni condividono azioni e finestre, per questo stanno nello stesso modulo. Da qui si crea, modifica, conclude ed elimina una prenotazione,
 // si apre il PDF di una pesata, si vedono le foto e si elimina l'ultima pesata.
 // Modifiche ed eliminazioni bloccano il record sul server (websocket dell'anagrafica access).
 
@@ -16,8 +16,8 @@ const TABS = {
   multiple:   { label: 'Multiple',   kind: 'access', query: { excludeManuallyAccess: true, excludeTransitAccess: true, permanent: false }, create: 'Nuova prenotazione' },
   permanenti: { label: 'Permanenti', kind: 'access', query: { excludeManuallyAccess: true, excludeTransitAccess: true, permanent: true }, create: 'Nuova prenotazione permanente', permanent: true },
   transiti:   { label: 'Transiti',   kind: 'access', query: { transits: true }, create: 'Nuovo transito', transit: true },
-  pesate:     { label: 'Pesate',     kind: 'inout' },
 };
+const PESATE = { label: 'Pesate', kind: 'inout' };
 const TAB_KEYS = Object.keys(TABS);
 
 // Anagrafiche collegate a una prenotazione/pesata: chiave API, campo mostrato, etichetta
@@ -75,7 +75,14 @@ const imgUrl = p => `/images${p.path_name.startsWith('/') ? '' : '/'}${p.path_na
 
 export function renderPrenotazioni(el) {
   const tab = currentTab();
-  const conf = TABS[tab];
+  return renderSection(el, TABS[tab], tab);
+}
+
+export function renderPesate(el) {
+  return renderSection(el, PESATE, null);
+}
+
+function renderSection(el, conf, tab) {
   let table = null;
   let socket = null;
   let destroyed = false;
@@ -84,11 +91,11 @@ export function renderPrenotazioni(el) {
 
   el.innerHTML = `
     <div class="page">
-      <nav class="tabs" aria-label="Prenotazioni">
+      ${tab ? `<nav class="tabs" aria-label="Prenotazioni">
         ${TAB_KEYS.map(t => `<a class="tab" href="#/prenotazioni/${t}" ${t === tab ? 'aria-current="page"' : ''}>${esc(TABS[t].label)}</a>`).join('')}
-      </nav>
+      </nav>` : ''}
       <div class="page-h">
-        <h2>${esc(conf.label)}</h2>
+        <h2>${esc(tab ? conf.label : 'Storico pesate')}</h2>
         <div class="page-actions"></div>
       </div>
       <div class="filter-bar">
