@@ -57,11 +57,9 @@ function renderStatus() {
     const kg = st.kind === 'ok' || st.kind === 'idle' || st.kind === 'warn' ? `${formatKg(g)} kg` : st.label;
     return `<span class="chip ${st.kind}" title="${esc(w.name)}: ${esc(st.label)}"><span class="dot"></span>${esc(w.name)} · ${esc(kg)}</span>`;
   });
-  const relays = plant.weighers.flatMap(w => Object.entries(w.relays).map(([n, v]) =>
-    `<span class="chip ${v === 1 ? 'ok' : 'err'}" title="Relè ${esc(n)} di ${esc(w.name)}"><span class="dot"></span>Sbarra ${esc(n)} ${v === 1 ? 'aperta' : 'chiusa'}</span>`));
   const modeLabel = { AUTOMATIC: 'Automatico', SEMIAUTOMATIC: 'Semiautomatico' }[plant.mode] || 'Manuale';
   const mode = plant.config ? `<span class="chip ${plant.isAutomatic ? 'ok' : ''}"><span class="dot"></span>${modeLabel}</span>` : '';
-  strip.innerHTML = mode + chips.join('') + relays.join('');
+  strip.innerHTML = mode + chips.join('');
 }
 let statusQueued = false;
 function queueStatus() {
@@ -69,7 +67,7 @@ function queueStatus() {
   statusQueued = true;
   requestAnimationFrame(() => { statusQueued = false; renderStatus(); });
 }
-['loaded', 'realtime', 'connection', 'relays'].forEach(t => plant.on(t, queueStatus));
+['loaded', 'realtime', 'connection'].forEach(t => plant.on(t, queueStatus));
 
 // ── Tema ─────────────────────────────────────────────────────
 const THEME_KEY = 'ui-v2.theme';
