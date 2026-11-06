@@ -1,8 +1,11 @@
-# Nuova interfaccia (v2)
+# Interfaccia (v2)
 
-Interfaccia nuova, separata da quella attuale (`static/ui/default`).
-È servita dal server su **`/v2/`** e usa lo stesso login e le stesse API:
-le due interfacce funzionano insieme.
+È l'unica interfaccia dell'applicazione: il server la serve sulla radice **`/`**
+(`/dashboard` e `/v2/` reindirizzano qui). Il login è in `login.html` (`/login`).
+
+Della vecchia interfaccia (`static/ui/default`, servita su `/static/`) restano solo:
+totem (`/totem`, `/dashboard-totem`, `totem-*.html`), report designer
+(`/report-designer/...`) e la vista 3D (`/static/config3d.html`, usata da *Impianto*).
 
 - Nessun passaggio di compilazione e nessuna libreria esterna: HTML, CSS e
   moduli JavaScript (funziona anche senza internet presso il cliente).
@@ -13,6 +16,10 @@ le due interfacce funzionano insieme.
 
 ```
 index.html            guscio: menu laterale, barra di stato, area contenuti
+login.html            accesso (salva il token usato da tutte le pagine)
+404.html              pagina non trovata
+css/login.css         pagine di accesso e 404
+js/login.js           accesso: chiamata a /api/auth/login, ritorno a ?next=
 css/app.css           token dei colori, layout, componenti comuni
 css/pesa.css          schermata Pesa
 js/app.js             avvio, navigazione, barra di stato, tema

@@ -2,7 +2,7 @@ import libs.lb_log as lb_log
 import libs.lb_config as lb_config
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, RedirectResponse, PlainTextResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, PlainTextResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 import psutil
@@ -128,6 +128,10 @@ def init():
 	app = FastAPI()
 	utils.base_path_applications = Path(__file__).parent
 	path_ui = utils.base_path_applications / lb_config.g_config["app_api"]["path_ui"]
+	# Le vecchie interfacce (adq, fiera, ...) sono state rimosse: resta solo static/ui/default (totem, report designer, vista 3D)
+	if not path_ui.is_dir():
+		lb_log.warning(f"Cartella interfaccia {path_ui} non trovata, uso static/ui/default")
+		path_ui = utils.base_path_applications / "static" / "ui" / "default"
 	path_content = utils.base_path_applications / lb_config.g_config["app_api"]["path_content"]
 	path_images = lb_config.g_config["app_api"]["path_img"]
 	if not path_images.startswith("/"):
@@ -203,42 +207,19 @@ def init():
  
 	app.mount("/images", StaticFiles(directory=path_images), name="images")
 
-	# Nuova interfaccia (in sviluppo), separata da quella attuale: /v2/
+	# Interfaccia unica (ui-v2): servita sulla radice, montata in fondo a questa funzione
 	path_ui_v2 = utils.base_path_applications / "static" / "ui-v2"
-	if path_ui_v2.is_dir():
-		@app.get("/v2", include_in_schema=False)
-		async def ui_v2_root():
-			return RedirectResponse(url="/v2/")
 
-		app.mount("/v2", StaticFiles(directory=path_ui_v2, html=True), name="ui-v2")
- 
-	@app.get("/access", response_class=HTMLResponse)
-	async def Access(request: Request):
-		return templates.TemplateResponse("access.html", {"request": request})
+	@app.get("/login", include_in_schema=False)
+	async def Login():
+		return FileResponse(path_ui_v2 / "login.html")
 
-	@app.get("/reservation", response_class=HTMLResponse)
-	async def Reservation(request: Request):
-		return templates.TemplateResponse("reservation.html", {"request": request})
-
-	@app.get("/reservation-multiple", response_class=HTMLResponse)
-	async def ReservationMultiple(request: Request):
-		return templates.TemplateResponse("reservation.html", {"request": request})
-
-	@app.get("/reservation-permanenti", response_class=HTMLResponse)
-	async def ReservationPermanenti(request: Request):
-		return templates.TemplateResponse("reservation.html", {"request": request})
-
-	@app.get("/transit", response_class=HTMLResponse)
-	async def Transit(request: Request):
-		return templates.TemplateResponse("transit.html", {"request": request})
-
-	@app.get("/card-registry", response_class=HTMLResponse)
-	async def CardRegistry(request: Request):
-		return templates.TemplateResponse("card-registry.html", {"request": request})
-
-	@app.get("/log", response_class=HTMLResponse)
-	async def Log(request: Request):
-		return templates.TemplateResponse("log.html", {"request": request})
+	# Vecchi indirizzi dell'interfaccia precedente: portano alla nuova
+	@app.get("/dashboard", include_in_schema=False)
+	@app.get("/v2", include_in_schema=False)
+	@app.get("/v2/", include_in_schema=False)
+	async def LegacyHome():
+		return RedirectResponse(url="/")
  
 	@app.get('/report-designer/entrata', response_class=HTMLResponse)
 	async def report_designer(request: Request):
@@ -364,19 +345,19 @@ def init():
 	@app.get("/dashboard-totem", response_class=HTMLResponse)
 	async def DashboardTotem(request: Request):
 		if not _totem_enabled():
-			return RedirectResponse(url="/not-found")
+			return RedirectResponse(url="/")
 		return templates.TemplateResponse("dashboard-totem.html", {"request": request})
 
 	@app.get("/totem", response_class=HTMLResponse)
 	async def Totem(request: Request):
 		if not _totem_enabled():
-			return RedirectResponse(url="/not-found")
+			return RedirectResponse(url="/")
 		return templates.TemplateResponse("totem.html", {"request": request})
 
 	@app.get("/totem.html", response_class=HTMLResponse)
 	async def TotemHtml(request: Request):
 		if not _totem_enabled():
-			return RedirectResponse(url="/not-found")
+			return RedirectResponse(url="/")
 		return templates.TemplateResponse("totem.html", {"request": request})
 
 	@app.get('/logs/weighing-errors', response_class=PlainTextResponse)
@@ -387,22 +368,21 @@ def init():
 			return PlainTextResponse(content or "Nessun errore di pesatura registrato.")
 		return PlainTextResponse("Nessun errore di pesatura registrato.")
 
-	@app.get('/{filename:path}', response_class=HTMLResponse)
-	async def Static(request: Request, filename: str):
-		"""Gestisce le richieste di file statici (HTML, CSS, JS)."""
-		if filename is None or filename == "":
-			return RedirectResponse(url="/dashboard")
+	# Pagine del totem (la navigazione tra le schermate usa indirizzi relativi, es. "totem-plate.html")
+	TOTEM_PAGES = [
+		"dashboard-totem", "totem-customer", "totem-driver", "totem-material", "totem-plate",
+		"totem-subject", "totem-summary", "totem-supplier", "totem-type", "totem-vector",
+	]
 
-		# Verifica se il file esiste nella directory templates
-		file_path = path_ui / filename
-		if file_path.is_file():
-			return templates.TemplateResponse(filename, {"request": request})
+	def _add_totem_page(page: str):
+		async def TotemPage(request: Request):
+			if not _totem_enabled():
+				return RedirectResponse(url="/")
+			return templates.TemplateResponse(f"{page}.html", {"request": request})
+		app.add_api_route(f"/{page}.html", TotemPage, methods=["GET"], response_class=HTMLResponse, include_in_schema=False)
 
-		# Prova ad aggiungere l'estensione ".html" se non è stato fornito
-		filename_html = f"{filename}.html"
-		file_path_html = path_ui / filename_html
-		if file_path_html.is_file():
-			return templates.TemplateResponse(filename_html, {"request": request})
+	for _page in TOTEM_PAGES:
+		_add_totem_page(_page)
 
-		# Se il file non esiste, fai un redirect alla home
-		return RedirectResponse(url="/not-found")
+	# Tutto il resto è la nuova interfaccia (index.html, css, js)
+	app.mount("/", StaticFiles(directory=path_ui_v2, html=True), name="ui")
