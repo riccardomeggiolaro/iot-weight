@@ -57,7 +57,8 @@
 /* Azioni */
 .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .actions .big { padding: 18px 14px; font-size: 18px; border-radius: 12px; }
-.actions .small-row { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.actions .small-row { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+@media (max-width: 520px) { .actions .small-row { grid-template-columns: repeat(2, 1fr); } }
 .auto-banner {
   display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 12px;
   background: var(--ok-bg); color: var(--ok); font-weight: 600; font-size: 14px;
