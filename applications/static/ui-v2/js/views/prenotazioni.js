@@ -103,8 +103,6 @@ function renderSection(el, conf, tab) {
           <label class="field inline"><span>Stato</span>
             <select class="input" data-f="status">
               <option value="NOT_CLOSED" selected>Attive</option>
-              <option value="${conf.transit ? 'OPEN' : 'WAITING'}">In attesa</option>
-              <option value="ENTERED">In corso</option>
               <option value="CLOSED">Concluse</option>
               <option value="">Tutte</option>
             </select></label>` : ''}

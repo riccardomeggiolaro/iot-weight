@@ -45,7 +45,7 @@ js/views/placeholder.js  sezioni non ancora pronte
 |---------------|-------|
 | Pesa          | pronta: peso, mezzo, entrata/uscita, tara, zero, ristampa, foto, sbarre, attività |
 | Impianto      | vista 3D esistente |
-| Prenotazioni  | pronta: schede Multiple, Permanenti, Transiti (stati In attesa / In corso / Conclusa; crea, modifica, concludi, elimina, dettaglio pesate con PDF, foto ed eliminazione dell'ultima pesata); aggiornamento in tempo reale |
+| Prenotazioni  | pronta: schede Multiple, Permanenti, Transiti (filtro Attive / Concluse / Tutte, stato In attesa / In corso / Conclusa; crea, modifica, concludi, elimina, dettaglio pesate con PDF, foto ed eliminazione dell'ultima pesata); aggiornamento in tempo reale |
 | Pesate        | pronta (voce di menu a sé): una riga per pesata, filtri, dettaglio con foto, PDF, modifica dati, eliminazione dell'ultima pesata, export Excel/PDF |
 | Anagrafiche   | pronta: veicoli, clienti, fornitori, vettori, materiali, autisti, tessere — ricerca, ordinamento, inserimento/modifica/eliminazione con blocco del record, import CSV/Excel, aggiornamento in tempo reale |
 | Report        | da fare |
