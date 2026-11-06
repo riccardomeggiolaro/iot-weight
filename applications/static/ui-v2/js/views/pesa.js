@@ -6,6 +6,7 @@ import { plant, weightState } from '../plant.js';
 import { esc, formatKg, formatTime, toast } from '../ui.js';
 
 const SELECTED_KEY = 'ui-v2.selectedWeigher';
+const ACTIVITY_KEY = 'ui-v2.activityOpen';
 const activity = new Map(); // id pesa → [{ time, text, kind }]
 
 function logActivity(w, text, kind = '') {
@@ -73,11 +74,16 @@ export function renderPesa(el) {
           <div class="card-h"><h2 id="h-relays">Sbarre</h2></div>
           <div class="card-b" data-slot="relays"></div>
         </section>
-        <section class="card" aria-labelledby="h-activity">
-          <div class="card-h"><h2 id="h-activity">Attività</h2></div>
-          <div class="card-b"><ul class="activity" data-slot="activity"></ul></div>
-        </section>
       </div>
+    </div>
+    <div class="activity-drawer">
+      <section class="card activity-panel" id="activity-panel" aria-labelledby="h-activity" hidden>
+        <div class="card-h"><h2 id="h-activity">Attività</h2>
+          <button type="button" class="icon-btn" data-act="activity" aria-label="Nascondi attività">✕</button></div>
+        <div class="card-b"><ul class="activity" data-slot="activity"></ul></div>
+      </section>
+      <button type="button" class="activity-tab" data-act="activity" aria-expanded="false" aria-controls="activity-panel">
+        Attività <span class="activity-unread" data-slot="activity-unread" hidden></span></button>
     </div>`;
 
   const $ = s => el.querySelector(s);
@@ -208,8 +214,24 @@ export function renderPesa(el) {
       : '';
   }
 
+  // Registro attività: nascosto in una linguetta in basso a sinistra; mostra quante
+  // voci nuove sono arrivate mentre era chiuso.
+  let activityOpen = safeGet(ACTIVITY_KEY) === '1';
+  let activitySeen = Date.now();
+  function setActivityOpen(open) {
+    activityOpen = open;
+    safeSet(ACTIVITY_KEY, open ? '1' : '0');
+    renderActivity();
+  }
   function renderActivity() {
     const list = activity.get(current.id) || [];
+    $('#activity-panel').hidden = !activityOpen;
+    el.querySelectorAll('.activity-tab').forEach(t => t.setAttribute('aria-expanded', String(activityOpen)));
+    if (activityOpen) activitySeen = Date.now();
+    const unread = activityOpen ? 0 : list.filter(a => a.time.getTime() > activitySeen).length;
+    const badge = slot('activity-unread');
+    badge.hidden = !unread;
+    badge.textContent = unread > 9 ? '9+' : String(unread);
     slot('activity').innerHTML = list.length
       ? list.map(a => `<li><time>${formatTime(a.time)}</time><span class="${a.kind}">${esc(a.text)}</span></li>`).join('')
       : '<li class="empty">Nessuna attività in questa sessione.</li>';
@@ -308,6 +330,7 @@ export function renderPesa(el) {
     const relay = e.target.closest('[data-relay]');
     if (relay) return toggleRelay(relay.dataset.relay);
     const act = e.target.closest('[data-act]');
+    if (act?.dataset.act === 'activity') return setActivityOpen(!activityOpen);
     if (act) return act.dataset.act === 'clear' ? clearSelection() : command(act.dataset.act);
   });
   const form = el.querySelector('[data-form="plate"]');
@@ -317,6 +340,7 @@ export function renderPesa(el) {
   const onKey = e => {
     const map = { F1: 'in', F2: 'out', F3: 'tare', F4: 'zero' };
     if (map[e.key]) { e.preventDefault(); command(map[e.key]); }
+    if (e.key === 'Escape' && activityOpen && !document.querySelector('dialog[open]')) setActivityOpen(false);
   };
   window.addEventListener('keydown', onKey);
 
