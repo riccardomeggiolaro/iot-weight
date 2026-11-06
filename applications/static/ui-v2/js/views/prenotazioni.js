@@ -1,5 +1,5 @@
 // Prenotazioni: schede Multiple, Permanenti, Transiti (elenco delle prenotazioni) e Pesate
-// (storico di ogni pesata). Da qui si crea, modifica, chiude ed elimina una prenotazione,
+// (storico di ogni pesata). Da qui si crea, modifica, conclude ed elimina una prenotazione,
 // si apre il PDF di una pesata, si vedono le foto e si elimina l'ultima pesata.
 // Modifiche ed eliminazioni bloccano il record sul server (websocket dell'anagrafica access).
 
@@ -30,10 +30,11 @@ const LINKS = [
 ];
 
 const STATUS = {
+  // Stati del server: Attesa/Aperto (nessuna pesata, Aperto è usato dai transiti), Entrato, Chiusa
   Attesa: { label: 'In attesa', cls: 'info' },
-  Aperto: { label: 'Aperta', cls: 'info' },
-  Entrato: { label: 'Entrata', cls: 'warn' },
-  Chiusa: { label: 'Chiusa', cls: '' },
+  Aperto: { label: 'In attesa', cls: 'info' },
+  Entrato: { label: 'In corso', cls: 'warn' },
+  Chiusa: { label: 'Conclusa', cls: '' },
 };
 
 const ICON = {
@@ -94,10 +95,10 @@ export function renderPrenotazioni(el) {
         ${conf.kind === 'access' ? `
           <label class="field inline"><span>Stato</span>
             <select class="input" data-f="status">
-              <option value="NOT_CLOSED" selected>Aperte</option>
-              <option value="WAITING">In attesa</option>
-              <option value="ENTERED">Entrate</option>
-              <option value="CLOSED">Chiuse</option>
+              <option value="NOT_CLOSED" selected>Attive</option>
+              <option value="${conf.transit ? 'OPEN' : 'WAITING'}">In attesa</option>
+              <option value="ENTERED">In corso</option>
+              <option value="CLOSED">Concluse</option>
               <option value="">Tutte</option>
             </select></label>` : ''}
         <label class="field inline"><span>${conf.kind === 'access' ? 'Create dal' : 'Pesate dal'}</span><input class="input" type="date" data-f="fromDate"></label>
@@ -168,7 +169,7 @@ export function renderPrenotazioni(el) {
       actions: canWrite ? r => {
         const acts = [];
         const last = r.in_out?.[r.in_out.length - 1];
-        if (r.status !== 'Chiusa' && last && (last.weight2 || last.idWeight2)) acts.push({ label: 'Chiudi', icon: ICON.close, kind: 'primary', run: closeAccess });
+        if (r.status !== 'Chiusa' && last && (last.weight2 || last.idWeight2)) acts.push({ label: 'Concludi', icon: ICON.close, kind: 'primary', run: closeAccess });
         acts.push({ label: 'Modifica', icon: ICON.edit, run: editAccess });
         if (!r.in_out?.length) acts.push({ label: 'Elimina', icon: ICON.del, kind: 'danger', run: deleteAccess });
         return acts;
@@ -324,11 +325,11 @@ export function renderPrenotazioni(el) {
   const editAccess = r => withLock(r.id, 'UPDATE', () => openAccessForm(r));
 
   const closeAccess = r => withLock(r.id, 'UPDATE', async () => {
-    const ok = await confirmDialog('Chiudi prenotazione',
-      `<p>Chiudere la prenotazione di <strong>${esc(r.vehicle?.plate || '#' + r.id)}</strong>?</p>
+    const ok = await confirmDialog('Concludi prenotazione',
+      `<p>Concludere la prenotazione di <strong>${esc(r.vehicle?.plate || '#' + r.id)}</strong>?</p>
        <p class="muted">Non saranno più possibili altre pesate con questa prenotazione.</p>`,
-      { label: 'Chiudi', onConfirm: () => api(`/api/anagrafic/access/close/${r.id}`) });
-    if (ok) { toast('Prenotazione chiusa', 'ok'); table?.reload(); }
+      { label: 'Concludi', onConfirm: () => api(`/api/anagrafic/access/close/${r.id}`) });
+    if (ok) { toast('Prenotazione conclusa', 'ok'); table?.reload(); }
   });
 
   const deleteAccess = r => withLock(r.id, 'DELETE', async () => {
@@ -343,7 +344,7 @@ export function renderPrenotazioni(el) {
     return withLock(access.id, 'DELETE', async () => {
       const ok = await confirmDialog('Elimina ultima pesata',
         `<p>Eliminare l'ultima pesata di <strong>${esc(access.vehicle?.plate || '#' + access.id)}</strong>${w?.pid ? ` (PID <strong>${esc(w.pid)}</strong>)` : ''}?</p>
-         <p class="muted">La pesata viene tolta dalla prenotazione, che torna aperta. L'operazione non si può annullare.</p>`,
+         <p class="muted">La pesata viene tolta dalla prenotazione, che torna in corso (o in attesa, se non restano pesate). L'operazione non si può annullare.</p>`,
         { label: 'Elimina pesata', kind: 'danger', onConfirm: () => api(`/api/anagrafic/access/last-weighing/${access.id}`, { method: 'DELETE' }) });
       if (ok) { toast('Ultima pesata eliminata', 'ok'); table?.reload(); }
     });
