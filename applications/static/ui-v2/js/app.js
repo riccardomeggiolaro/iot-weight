@@ -7,12 +7,13 @@ import { renderPesa } from './views/pesa.js';
 import { renderImpianto } from './views/impianto.js';
 import { renderPlaceholder } from './views/placeholder.js';
 import { renderAnagrafiche } from './views/anagrafiche.js';
+import { renderPrenotazioni } from './views/prenotazioni.js';
 
 if (!getToken()) logout();
 
 const ROUTES = {
   pesa:         { title: 'Pesa',         render: renderPesa },
-  accessi:      { title: 'Accessi',      render: el => renderPlaceholder(el, '📋', 'Accessi e prenotazioni', 'Mezzi in impianto, prenotazioni e storico delle pesate.') },
+  prenotazioni: { title: 'Prenotazioni', render: renderPrenotazioni },
   anagrafiche:  { title: 'Anagrafiche',  render: renderAnagrafiche },
   impianto:     { title: 'Impianto',     render: renderImpianto },
   report:       { title: 'Report',       render: el => renderPlaceholder(el, '📊', 'Report', 'Statistiche, esportazioni e modelli di stampa.') },

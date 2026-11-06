@@ -30,7 +30,8 @@ def get_last_in_out_by_weigher(weigher_name=None):
                             selectinload(Access.customer),
                             selectinload(Access.supplier),
                             selectinload(Access.vector),
-                            selectinload(Access.material)
+                            selectinload(Access.material),
+                            selectinload(Access.card_registry)
                         ),
                         selectinload(InOut.customer),
                         selectinload(InOut.supplier),

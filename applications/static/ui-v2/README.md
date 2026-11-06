@@ -9,7 +9,7 @@ totem (`/totem`, `/dashboard-totem`, `totem-*.html`), report designer
 
 - Nessun passaggio di compilazione e nessuna libreria esterna: HTML, CSS e
   moduli JavaScript (funziona anche senza internet presso il cliente).
-- Navigazione con hash (`#/pesa`, `#/accessi`, …): una sola pagina.
+- Navigazione con hash (`#/pesa`, `#/prenotazioni`, …): una sola pagina.
 - Tema chiaro di default, scuro automatico o dal pulsante in alto.
 
 ## Struttura
@@ -30,6 +30,8 @@ js/plant.js           stato dell'impianto: configurazione + websocket per pesa,
 js/ui.js              escape HTML, avvisi, formattazione
 js/views/pesa.js      schermata Pesa
 js/views/anagrafiche.js  schermata Anagrafiche (#/anagrafiche/<scheda>)
+js/views/prenotazioni.js schermata Prenotazioni (#/prenotazioni/<scheda>)
+js/anagrafic-input.js campo con suggerimenti per scegliere/creare un record di un'anagrafica
 js/data-table.js      tabella con filtri, ordinamento e paginazione lato server
 js/anagrafic-socket.js   websocket di un'anagrafica: eventi in tempo reale e blocco dei record
 css/data.css          schede, tabelle, finestre di dialogo e form
@@ -43,7 +45,7 @@ js/views/placeholder.js  sezioni non ancora pronte
 |---------------|-------|
 | Pesa          | pronta: peso, mezzo, entrata/uscita, tara, zero, ristampa, foto, sbarre, attività |
 | Impianto      | vista 3D esistente |
-| Accessi       | da fare |
+| Prenotazioni  | pronta: schede Multiple, Permanenti, Transiti (crea, modifica, chiudi, elimina, dettaglio pesate con PDF, foto ed eliminazione dell'ultima pesata) e Pesate (una riga per pesata, modifica dati, export Excel/PDF); aggiornamento in tempo reale |
 | Anagrafiche   | pronta: veicoli, clienti, fornitori, vettori, materiali, autisti, tessere — ricerca, ordinamento, inserimento/modifica/eliminazione con blocco del record, import CSV/Excel, aggiornamento in tempo reale |
 | Report        | da fare |
 | Impostazioni  | da fare (configurazione guidata) |
