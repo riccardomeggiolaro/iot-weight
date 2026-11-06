@@ -3,10 +3,13 @@ from typing import Optional, List
 from modules.md_database.functions.get_data_by_id import get_data_by_id
 from datetime import datetime
 
+# Anagrafica fornitori: ragione sociale (obbligatoria), codice del gestionale, CF/P.IVA.
+
 class Supplier(BaseModel):
-	social_reason:  Optional[str] = None
-	telephone: Optional[str] = None
+	social_reason: Optional[str] = None
+	code: Optional[str] = None
 	cfpiva: Optional[str] = None
+	archived: Optional[bool] = False
 	date_created: Optional[datetime] = None
 	reservations: List[any] = []
 	id: Optional[int] = None
@@ -16,8 +19,8 @@ class Supplier(BaseModel):
 		arbitrary_types_allowed = True
 
 class SupplierDataDTO(BaseModel):
-	social_reason:  Optional[str] = None
-	telephone: Optional[str] = None
+	social_reason: Optional[str] = None
+	code: Optional[str] = None
 	cfpiva: Optional[str] = None
 	id: Optional[int] = None
 
@@ -29,8 +32,8 @@ class SupplierDataDTO(BaseModel):
 		return v
 
 class SupplierDTO(BaseModel):
-	social_reason:  Optional[str] = None
-	telephone: Optional[str] = None
+	social_reason: Optional[str] = None
+	code: Optional[str] = None
 	cfpiva: Optional[str] = None
 	id: Optional[int] = None
 
@@ -42,7 +45,7 @@ class SupplierDTO(BaseModel):
 				raise ValueError('Id not exist in supplier')
 			else:
 				values['social_reason'] = data.get('social_reason')
-				values['telephone'] = data.get('telephone')
+				values['code'] = data.get('code')
 				values['cfpiva'] = data.get('cfpiva')
 		return v
 
@@ -52,31 +55,28 @@ class SupplierDTO(BaseModel):
 
 class AddSupplierDTO(BaseModel):
 	social_reason: str
-	telephone: Optional[str] = None
+	code: Optional[str] = None
 	cfpiva: Optional[str] = None
 
 	@field_validator('*', mode='before')
 	@classmethod
 	def empty_str_to_none(cls, value, info):
-		if isinstance(value, str) and value == "":
+		if isinstance(value, str) and value.strip() == "":
 			return None
-		return value
+		return value.strip() if isinstance(value, str) else value
 
 class SetSupplierDTO(BaseModel):
-	social_reason:  Optional[str] = None
-	telephone: Optional[str] = None
+	social_reason: Optional[str] = None
+	code: Optional[str] = None
 	cfpiva: Optional[str] = None
 
 	@root_validator(pre=True)
 	def check_at_least_one_field(cls, values):
-		name = values.get('social_reason')
-		telephone = values.get('telephone')
-		cfpiva = values.get('cfpiva')
-		if not name and not telephone and not cfpiva:
-			raise ValueError('At least one of "name", "telephone" or "cfpiva" must be provided.')
+		if not values.get('social_reason') and not values.get('code') and not values.get('cfpiva'):
+			raise ValueError('At least one of "social_reason", "code" or "cfpiva" must be provided.')
 		return values
-	
+
 class FilterSupplierDTO(BaseModel):
-	social_reason:  Optional[str] = None
-	telephone: Optional[str] = None
+	social_reason: Optional[str] = None
+	code: Optional[str] = None
 	cfpiva: Optional[str] = None

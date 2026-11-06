@@ -5,6 +5,8 @@ from datetime import datetime
 
 class Material(BaseModel):
 	description: Optional[str] = None
+	code: Optional[str] = None
+	archived: Optional[bool] = False
 	date_created: Optional[datetime] = None
 	reservations: List[any] = []
 	id: Optional[int] = None
@@ -15,6 +17,7 @@ class Material(BaseModel):
 
 class MaterialDataDTO(BaseModel):
 	description:  Optional[str] = None
+	code: Optional[str] = None
 	id: Optional[int] = None
 
 	@validator('id', pre=True, always=True)
@@ -26,6 +29,7 @@ class MaterialDataDTO(BaseModel):
 
 class MaterialDTO(BaseModel):
 	description:  Optional[str] = None
+	code: Optional[str] = None
 	id: Optional[int] = None
 
 	@validator('id', pre=True, always=True)
@@ -36,6 +40,7 @@ class MaterialDTO(BaseModel):
 				raise ValueError('Id not exist in material')
 			else:
 				values['description'] = data.get('description')
+				values['code'] = data.get('code')
 		return v
 
 	class Config:
@@ -44,6 +49,7 @@ class MaterialDTO(BaseModel):
 
 class AddMaterialDTO(BaseModel):
     description: Optional[str] = None
+    code: Optional[str] = None
 
     @root_validator(pre=True)
     def check_at_least_one_field(cls, values):
@@ -54,7 +60,8 @@ class AddMaterialDTO(BaseModel):
 
 class SetMaterialDTO(BaseModel):
     description: Optional[str] = None
-    
+    code: Optional[str] = None
+
     @root_validator(pre=True)
     def check_at_least_one_field(cls, values):
         description = values.get('description')
@@ -64,3 +71,4 @@ class SetMaterialDTO(BaseModel):
     
 class FilterMaterialDTO(BaseModel):
     description: Optional[str] = None
+    code: Optional[str] = None

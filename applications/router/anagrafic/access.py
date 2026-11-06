@@ -24,7 +24,7 @@ from modules.md_database.functions.get_in_out_by_id import get_in_out_by_id
 from modules.md_database.functions.safe_get_attr import safe_get_attr
 from applications.utils.utils import get_query_params
 from applications.utils.utils_weigher import get_query_params_name_node, InstanceNameWeigherDTO
-from applications.utils.utils_report import find_file_in_directory, compute_grouped_totals, write_xlsx_totals_section, build_pdf_totals_flowables, resolve_in_out_customer, resolve_in_out_supplier, resolve_in_out_vector
+from applications.utils.utils_report import find_file_in_directory, compute_grouped_totals, write_xlsx_totals_section, build_pdf_totals_flowables, resolve_in_out_customer, resolve_in_out_supplier, resolve_in_out_vector, in_out_plate, in_out_material_description
 from applications.router.anagrafic.web_sockets import WebSocket
 from applications.router.anagrafic.panel_siren.router import PanelSirenRouter
 from applications.router.weigher.manager_weighers_data import broadcastMessageWebSocket
@@ -375,7 +375,7 @@ class AccessRouter(PanelSirenRouter):
                 row = {}
                 
                 if load_vehicle:
-                    row["Targa"] = inout.access.vehicle.plate if inout.access.vehicle else None
+                    row["Targa"] = in_out_plate(inout)
 
                 if load_customer:
                     customer = resolve_in_out_customer(inout)
@@ -390,7 +390,7 @@ class AccessRouter(PanelSirenRouter):
                     row["Vettore"] = vector.social_reason if vector else None
 
                 if load_material:
-                    row["Materiale"] = inout.material.description if inout.material else None
+                    row["Materiale"] = in_out_material_description(inout)
 
                 if load_note:
                     row["Note"] = inout.access.note
@@ -430,7 +430,7 @@ class AccessRouter(PanelSirenRouter):
             show_export_totals = lb_config.g_config["app_api"].get("show_export_totals", True)
             material_totals = compute_grouped_totals(
                 data,
-                key_fn=lambda inout: inout.material.description if inout.material else None,
+                key_fn=lambda inout: in_out_material_description(inout),
                 value_fn=lambda inout: inout.net_weight,
             ) if load_material and show_export_totals else []
             customer_totals = compute_grouped_totals(
@@ -445,7 +445,7 @@ class AccessRouter(PanelSirenRouter):
             ) if load_supplier and show_export_totals else []
             plate_totals = compute_grouped_totals(
                 data,
-                key_fn=lambda inout: inout.access.vehicle.plate if inout.access and inout.access.vehicle else None,
+                key_fn=lambda inout: in_out_plate(inout),
                 value_fn=lambda inout: inout.net_weight,
             ) if load_vehicle and show_export_totals else []
 
@@ -675,7 +675,7 @@ class AccessRouter(PanelSirenRouter):
                 row = []
                 
                 if load_vehicle:
-                    row.append(str(inout.access.vehicle.plate if inout.access.vehicle else '')[:6])
+                    row.append(str(in_out_plate(inout) or '')[:6])
                 
                 if load_customer:
                     customer = resolve_in_out_customer(inout)
@@ -689,7 +689,7 @@ class AccessRouter(PanelSirenRouter):
                     row.append(str(vector.social_reason if vector else '')[:18])
 
                 if load_material:
-                    row.append(str(inout.material.description if inout.material else '')[:12])
+                    row.append(str(in_out_material_description(inout) or '')[:12])
 
                 if load_note:
                     row.append(str(inout.access.note or '')[:18])
@@ -739,7 +739,7 @@ class AccessRouter(PanelSirenRouter):
             if show_export_totals:
                 material_totals = compute_grouped_totals(
                     data,
-                    key_fn=lambda inout: inout.material.description if inout.material else None,
+                    key_fn=lambda inout: in_out_material_description(inout),
                     value_fn=lambda inout: inout.net_weight,
                 ) if load_material else []
                 customer_totals = compute_grouped_totals(
@@ -754,7 +754,7 @@ class AccessRouter(PanelSirenRouter):
                 ) if load_supplier else []
                 plate_totals = compute_grouped_totals(
                     data,
-                    key_fn=lambda inout: inout.access.vehicle.plate if inout.access and inout.access.vehicle else None,
+                    key_fn=lambda inout: in_out_plate(inout),
                     value_fn=lambda inout: inout.net_weight,
                 ) if load_vehicle else []
 

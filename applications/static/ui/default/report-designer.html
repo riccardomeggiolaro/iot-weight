@@ -1468,19 +1468,20 @@
                             <select onchange="insertQuickVariable(this.value); this.value='';">
                                 <option value="">-- Seleziona variabile --</option>
                                 <option value="{{ customer.social_reason }}">{{ customer.social_reason }} - Ragione sociale CLIENTE</option>
-                                <option value="{{ customer.telephone }}">{{ customer.telephone }} - Telefono CLIENTE</option>
+                                <option value="{{ customer.code }}">{{ customer.code }} - Codice gestionale CLIENTE</option>
                                 <option value="{{ customer.cfpiva }}">{{ customer.cfpiva }} - CF/P.iVA CLIENTE</option>
                                 <option value="{{ supplier.social_reason }}">{{ supplier.social_reason }} - Ragione sociale FORNITORE</option>
-                                <option value="{{ supplier.telephone }}">{{ supplier.telephone }} - Telefono FORNITORE</option>
+                                <option value="{{ supplier.code }}">{{ supplier.code }} - Codice gestionale FORNITORE</option>
                                 <option value="{{ supplier.cfpiva }}">{{ supplier.cfpiva }} - CF/P.iVA FORNITORE</option>
                                 <option value="{{ vector.social_reason }}">{{ vector.social_reason }} - Ragione sociale VETTORE</option>
-                                <option value="{{ vector.telephone }}">{{ vector.telephone }} - Telefono VETTORE</option>
+                                <option value="{{ vector.code }}">{{ vector.code }} - Codice gestionale VETTORE</option>
                                 <option value="{{ vector.cfpiva }}">{{ vector.cfpiva }} - CF/P.Iva VETTORE</option>
                                 <option value="{{ driver.social_reason }}">{{ driver.social_reason }} - Ragione sociale AUTISTA</option>
                                 <option value="{{ driver.telephone }}">{{ driver.telephone }} - Telefono AUTISTA</option>
                                 <option value="{{ vehicle.plate }}">{{ vehicle.plate }} - Targa VEICOLO</option>
                                 <option value="{{ vehicle.description }}">{{ vehicle.description }} - Descrizione VEICOLO</option>
                                 <option value="{{ material.description }}">{{ material.description }} - Descrizione MATERIALE</option>
+                                <option value="{{ material.code }}">{{ material.code }} - Codice gestionale MATERIALE</option>
                                 <option value="{{ note }}">{{ note }} - NOTE</option>
                                 <option value="{{ document_reference }}">{{ document_reference }} - REFERENZA DOCUMENTO</option>
                                 <option value="{{ weight1.weight }}">{{ weight1.weight }} - Peso ENTRATA</option>

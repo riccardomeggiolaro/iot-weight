@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Boolean, ForeignKey, Enum, func, Date, Time, text, inspect, UniqueConstraint
+from sqlalchemy import event, select, create_engine, Column, Integer, String, DateTime, Boolean, ForeignKey, Enum, func, Date, Time, text, inspect, UniqueConstraint
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship, object_session
 from sqlalchemy.ext.hybrid import hybrid_property
 from enum import Enum as PyEnum
@@ -36,8 +36,9 @@ class Customer(Base):
     __tablename__ = 'customer'
     id = Column(Integer, primary_key=True, index=True)
     social_reason = Column(String(collation="NOCASE"), index=True, unique=True)
-    telephone = Column(String(collation="NOCASE"), unique=True, nullable=True)
-    cfpiva = Column(String(collation="NOCASE"), unique=True, nullable=True)
+    code = Column(String(collation="NOCASE"), index=True, unique=True, nullable=True)  # codice nel gestionale
+    cfpiva = Column(String(collation="NOCASE"), nullable=True)
+    archived = Column(Boolean, default=False, nullable=False, server_default=text("0"))
     date_created = Column(DateTime, server_default=func.now(), default=datetime.now)
 
     accesses = relationship("Access", back_populates="customer", cascade="all, delete")
@@ -47,8 +48,9 @@ class Supplier(Base):
     __tablename__ = 'supplier'
     id = Column(Integer, primary_key=True, index=True)
     social_reason = Column(String(collation="NOCASE"), index=True, unique=True)
-    telephone = Column(String(collation="NOCASE"), unique=True, nullable=True)
-    cfpiva = Column(String(collation="NOCASE"), unique=True, nullable=True)
+    code = Column(String(collation="NOCASE"), index=True, unique=True, nullable=True)  # codice nel gestionale
+    cfpiva = Column(String(collation="NOCASE"), nullable=True)
+    archived = Column(Boolean, default=False, nullable=False, server_default=text("0"))
     date_created = Column(DateTime, server_default=func.now(), default=datetime.now)
 
     accesses = relationship("Access", back_populates="supplier", cascade="all, delete")
@@ -58,8 +60,9 @@ class Vector(Base):
     __tablename__ = 'vector'
     id = Column(Integer, primary_key=True, index=True)
     social_reason = Column(String(collation="NOCASE"), index=True, unique=True)
-    telephone = Column(String(collation="NOCASE"), unique=True, nullable=True)
-    cfpiva = Column(String(collation="NOCASE"), unique=True, nullable=True)
+    code = Column(String(collation="NOCASE"), index=True, unique=True, nullable=True)  # codice nel gestionale
+    cfpiva = Column(String(collation="NOCASE"), nullable=True)
+    archived = Column(Boolean, default=False, nullable=False, server_default=text("0"))
     date_created = Column(DateTime, server_default=func.now(), default=datetime.now)
 
     accesses = relationship("Access", back_populates="vector", cascade="all, delete")
@@ -69,7 +72,8 @@ class Driver(Base):
     __tablename__ = 'driver'
     id = Column(Integer, primary_key=True, index=True)
     social_reason = Column(String)
-    telephone = Column(String(collation="NOCASE"), index=True, unique=True, nullable=True)
+    telephone = Column(String(collation="NOCASE"), index=True, nullable=True)
+    archived = Column(Boolean, default=False, nullable=False, server_default=text("0"))
     date_created = Column(DateTime, server_default=func.now(), default=datetime.now)
 
     accesses = relationship("Access", back_populates="driver", cascade="all, delete")
@@ -82,6 +86,7 @@ class Vehicle(Base):
     description = Column(String, nullable=True)
     tare = Column(Integer, nullable=True)
     max_threshold = Column(Integer, nullable=True)
+    archived = Column(Boolean, default=False, nullable=False, server_default=text("0"))
     date_created = Column(DateTime, server_default=func.now(), default=datetime.now)
 
     accesses = relationship("Access", back_populates="vehicle", cascade="all, delete")
@@ -89,8 +94,10 @@ class Vehicle(Base):
 # Model for Material table
 class Material(Base):
     __tablename__ = 'material'
-    id = Column(Integer, primary_key=True, index=True) 
+    id = Column(Integer, primary_key=True, index=True)
     description = Column(String(collation="NOCASE"), index=True, unique=True)
+    code = Column(String(collation="NOCASE"), index=True, unique=True, nullable=True)  # codice nel gestionale
+    archived = Column(Boolean, default=False, nullable=False, server_default=text("0"))
     date_created = Column(DateTime, server_default=func.now(), default=datetime.now)
 
     in_out = relationship("InOut", back_populates="material", cascade="all, delete")
@@ -158,6 +165,7 @@ class CardRegistry(Base):
     id = Column(Integer, primary_key=True, index=True)
     number = Column(String(collation="NOCASE"), index=True, unique=True)
     code = Column(String(collation="NOCASE"), index=True, unique=True)
+    archived = Column(Boolean, default=False, nullable=False, server_default=text("0"))
     date_created = Column(DateTime, server_default=func.now(), default=datetime.now)
     accesses = relationship("Access", back_populates="card_registry")
 
@@ -273,6 +281,28 @@ class InOut(Base):
     document_reference = Column(String, nullable=True)
     idCardRegistry = Column(Integer, ForeignKey('card_registry.id'), nullable=True)
 
+    # "Stampino" dei dati al momento della pesata: stampe, export, CSV e sincronizzazione
+    # leggono questi campi, così la pesata resta com'era anche se l'anagrafica cambia o
+    # viene archiviata. Vengono compilati in automatico (vedi _fill_in_out_snapshot).
+    snapshot_version = Column(Integer, nullable=True)
+    plate = Column(String(collation="NOCASE"), nullable=True, index=True)
+    vehicle_description = Column(String, nullable=True)
+    customer_name = Column(String(collation="NOCASE"), nullable=True, index=True)
+    customer_code = Column(String(collation="NOCASE"), nullable=True)
+    customer_cfpiva = Column(String(collation="NOCASE"), nullable=True)
+    supplier_name = Column(String(collation="NOCASE"), nullable=True, index=True)
+    supplier_code = Column(String(collation="NOCASE"), nullable=True)
+    supplier_cfpiva = Column(String(collation="NOCASE"), nullable=True)
+    vector_name = Column(String(collation="NOCASE"), nullable=True, index=True)
+    vector_code = Column(String(collation="NOCASE"), nullable=True)
+    vector_cfpiva = Column(String(collation="NOCASE"), nullable=True)
+    driver_name = Column(String(collation="NOCASE"), nullable=True)
+    driver_telephone = Column(String, nullable=True)
+    material_description = Column(String(collation="NOCASE"), nullable=True, index=True)
+    material_code = Column(String(collation="NOCASE"), nullable=True)
+    card_number = Column(String(collation="NOCASE"), nullable=True)
+    card_code = Column(String(collation="NOCASE"), nullable=True)
+
     # Relationships
     access = relationship("Access", back_populates="in_out")
     customer = relationship("Customer", foreign_keys=[idCustomer])
@@ -342,12 +372,12 @@ table_models = {
 }
 
 upload_file_datas_required_columns = {
-    "customer": {"social_reason": str, "telephone": str, "cfpiva": str},
-    "supplier": {"social_reason": str, "telephone": str, "cfpiva": str},
-    "vector": {"social_reason": str, "telephone": str, "cfpiva": str},
+    "customer": {"social_reason": str, "code": str, "cfpiva": str},
+    "supplier": {"social_reason": str, "code": str, "cfpiva": str},
+    "vector": {"social_reason": str, "code": str, "cfpiva": str},
     "driver": {"social_reason": str, "telephone": str},
     "vehicle": {"plate": str, "description": str, "tare": int},
-    "material": {"description": str},
+    "material": {"description": str, "code": str},
     "operator": {"description": str},
     "access": {"idCustomer": int, "idSupplier": int, "idVector": int, "idVehicle": int, "number_in_out": int, "note": str, "idCardRegistry": int},
     "weighing-terminal": {"type": str, "id": str, "bil": str, "datetime1": str, "date1": str, "time1": str, "datetime2": str, "date2": str, "time2": str, "prog1": str, "prog2": str, "badge": str, "plate": str, "customer": str, "supplier": str, "material": str, "notes1": str, "notes2": str, "weight1": int, "pid1": str, "weight2": int, "pid2": str, "net_weight": int}
@@ -852,10 +882,10 @@ def migrate_subject_to_customer_supplier():
                 params = {"id": sid, "social_reason": social_reason, "telephone": telephone, "cfpiva": cfpiva, "date_created": date_created}
                 # stesso id del vecchio soggetto: i riferimenti si convertono senza tabelle di appoggio
                 if 'CUSTOMER' in kinds:
-                    conn.execute(text("INSERT INTO customer (id, social_reason, telephone, cfpiva, date_created) VALUES (:id, :social_reason, :telephone, :cfpiva, :date_created)"), params)
+                    conn.execute(text("INSERT INTO customer (id, social_reason, cfpiva, date_created) VALUES (:id, :social_reason, :cfpiva, :date_created)"), params)
                     n_customers += 1
                 if 'SUPPLIER' in kinds:
-                    conn.execute(text("INSERT INTO supplier (id, social_reason, telephone, cfpiva, date_created) VALUES (:id, :social_reason, :telephone, :cfpiva, :date_created)"), params)
+                    conn.execute(text("INSERT INTO supplier (id, social_reason, cfpiva, date_created) VALUES (:id, :social_reason, :cfpiva, :date_created)"), params)
                     n_suppliers += 1
 
             for t in refs:
@@ -874,6 +904,145 @@ def migrate_subject_to_customer_supplier():
             lb_log.info(f"Migrazione soggetti: {n_customers} clienti e {n_suppliers} fornitori creati da {len(subjects)} soggetti")
     except Exception as e:
         lb_log.error(f"Errore durante la migrazione soggetti -> clienti/fornitori: {e}")
+
+# ── Stampino dei dati sulla pesata (in_out) ─────────────────────────────────
+# Gruppi: colonna FK -> (tabella, [(colonna sorgente, colonna dello stampino)])
+_SNAPSHOT_GROUPS = {
+    "idCustomer": ("customer", [("social_reason", "customer_name"), ("code", "customer_code"), ("cfpiva", "customer_cfpiva")]),
+    "idSupplier": ("supplier", [("social_reason", "supplier_name"), ("code", "supplier_code"), ("cfpiva", "supplier_cfpiva")]),
+    "idVector": ("vector", [("social_reason", "vector_name"), ("code", "vector_code"), ("cfpiva", "vector_cfpiva")]),
+    "idDriver": ("driver", [("social_reason", "driver_name"), ("telephone", "driver_telephone")]),
+    "idMaterial": ("material", [("description", "material_description"), ("code", "material_code")]),
+    "idCardRegistry": ("card_registry", [("number", "card_number"), ("code", "card_code")]),
+}
+SNAPSHOT_VERSION = 1
+
+
+def _snapshot_group(connection, target, fk):
+    table_name, fields = _SNAPSHOT_GROUPS[fk]
+    model = {"customer": Customer, "supplier": Supplier, "vector": Vector, "driver": Driver,
+             "material": Material, "card_registry": CardRegistry}[table_name]
+    record_id = getattr(target, fk)
+    row = None
+    if record_id is not None:
+        row = connection.execute(
+            select(*[getattr(model, src) for src, _ in fields]).where(model.id == record_id)
+        ).first()
+    for i, (_, dst) in enumerate(fields):
+        setattr(target, dst, row[i] if row else None)
+
+
+def _snapshot_vehicle(connection, target):
+    row = None
+    if target.idAccess is not None:
+        row = connection.execute(
+            select(Vehicle.plate, Vehicle.description)
+            .select_from(Access).join(Vehicle, Vehicle.id == Access.idVehicle)
+            .where(Access.id == target.idAccess)
+        ).first()
+    target.plate = row[0] if row else None
+    target.vehicle_description = row[1] if row else None
+
+
+@event.listens_for(InOut, "before_insert")
+def _in_out_snapshot_on_insert(mapper, connection, target):
+    for fk in _SNAPSHOT_GROUPS:
+        _snapshot_group(connection, target, fk)
+    _snapshot_vehicle(connection, target)
+    target.snapshot_version = SNAPSHOT_VERSION
+
+
+@event.listens_for(InOut, "before_update")
+def _in_out_snapshot_on_update(mapper, connection, target):
+    from sqlalchemy import inspect as sa_inspect
+    state = sa_inspect(target)
+    changed = lambda key: state.attrs[key].history.has_changes()
+    # Alla chiusura della pesata (seconda pesata) lo stampino viene rifatto per intero:
+    # fotografa i dati definitivi. Altrimenti si aggiornano solo i gruppi cambiati
+    # (es. correzione del cliente di una pesata).
+    completed = changed("idWeight2") and target.idWeight2 is not None
+    for fk in _SNAPSHOT_GROUPS:
+        if completed or changed(fk):
+            _snapshot_group(connection, target, fk)
+    if completed or changed("idAccess") or target.snapshot_version is None:
+        _snapshot_vehicle(connection, target)
+    target.snapshot_version = SNAPSHOT_VERSION
+
+
+def migrate_in_out_snapshot():
+    """Compila lo stampino delle pesate già esistenti (una sola volta, dove manca)."""
+    try:
+        with engine.connect() as conn:
+            pending = conn.execute(text("SELECT COUNT(*) FROM in_out WHERE snapshot_version IS NULL")).scalar()
+            if not pending:
+                return
+            tables = {"customer": "customer", "supplier": "supplier", "vector": "vector", "driver": "driver",
+                      "material": "material", "card_registry": "card_registry"}
+            sets = []
+            for fk, (table_name, fields) in _SNAPSHOT_GROUPS.items():
+                for src, dst in fields:
+                    sets.append(f'"{dst}" = (SELECT t."{src}" FROM "{tables[table_name]}" t WHERE t.id = in_out."{fk}")')
+            sets.append('plate = (SELECT v.plate FROM access a JOIN vehicle v ON v.id = a.idVehicle WHERE a.id = in_out.idAccess)')
+            sets.append('vehicle_description = (SELECT v.description FROM access a JOIN vehicle v ON v.id = a.idVehicle WHERE a.id = in_out.idAccess)')
+            sets.append(f'snapshot_version = {SNAPSHOT_VERSION}')
+            conn.execute(text(f"UPDATE in_out SET {', '.join(sets)} WHERE snapshot_version IS NULL"))
+            conn.commit()
+            lb_log.info(f"Stampino pesate: compilate {pending} pesate esistenti")
+    except Exception as e:
+        lb_log.error(f"Errore durante la compilazione dello stampino delle pesate: {e}")
+
+
+def _rebuild_table(conn, model):
+    """Ricrea una tabella SQLite secondo il modello (per togliere colonne o vincoli UNIQUE non più previsti)."""
+    name = model.__tablename__
+    old = f"{name}__old"
+    old_cols = [row[1] for row in conn.execute(text(f'PRAGMA table_info("{name}")')).fetchall()]
+    conn.execute(text("PRAGMA legacy_alter_table = ON"))  # i riferimenti delle altre tabelle restano su "name"
+    conn.execute(text(f'ALTER TABLE "{name}" RENAME TO "{old}"'))
+    for idx in conn.execute(text(f'PRAGMA index_list("{old}")')).fetchall():
+        if idx[3] == 'c':  # indici creati esplicitamente (gli autoindex dei vincoli spariscono con la tabella)
+            conn.execute(text(f'DROP INDEX IF EXISTS "{idx[1]}"'))
+    model.__table__.create(conn)
+    common = [c.name for c in model.__table__.columns if c.name in old_cols]
+    cols = ", ".join(f'"{c}"' for c in common)
+    conn.execute(text(f'INSERT INTO "{name}" ({cols}) SELECT {cols} FROM "{old}"'))
+    conn.execute(text(f'DROP TABLE "{old}"'))
+    conn.execute(text("PRAGMA legacy_alter_table = OFF"))
+
+
+def migrate_anagrafiche_schema():
+    """
+    Allinea le anagrafiche al modello:
+    - clienti, fornitori e vettori non hanno più il telefono; telefono e CF/P.IVA non sono più unici
+      (due sedi della stessa ditta, stesso centralino): la tabella viene ricreata;
+    - crea gli indici previsti dal modello che mancano (es. codice unico sui materiali).
+    """
+    try:
+        with engine.connect() as conn:
+            for model in (Customer, Supplier, Vector, Driver):
+                name = model.__tablename__
+                db_cols = {row[1] for row in conn.execute(text(f'PRAGMA table_info("{name}")')).fetchall()}
+                if not db_cols:
+                    continue
+                model_cols = {c.name for c in model.__table__.columns}
+                model_unique = {c.name for c in model.__table__.columns if c.unique or c.primary_key}
+                db_unique = set()
+                for idx in conn.execute(text(f'PRAGMA index_list("{name}")')).fetchall():
+                    if idx[2]:
+                        info = conn.execute(text(f'PRAGMA index_info("{idx[1]}")')).fetchall()
+                        if len(info) == 1:
+                            db_unique.add(info[0][2])
+                if (db_cols - model_cols) or (db_unique - model_unique):
+                    _rebuild_table(conn, model)
+                    lb_log.info(f"Tabella '{name}' aggiornata (colonne/vincoli)")
+            conn.commit()
+        with engine.begin() as conn:
+            for model in (Customer, Supplier, Vector, Driver, Vehicle, Material, CardRegistry, InOut):
+                for idx in model.__table__.indexes:
+                    idx.create(conn, checkfirst=True)
+    except Exception as e:
+        lb_log.error(f"Errore durante l'aggiornamento delle anagrafiche: {e}")
+
 
 # Esegui migrazione per stati deprecati
 migrate_called_status()
@@ -896,6 +1065,9 @@ Base.metadata.create_all(engine)
 # Separazione dell'anagrafica soggetti in clienti e fornitori (dopo sync e create)
 migrate_subject_to_customer_supplier()
 
+# Anagrafiche: codice, archiviazione, niente telefono/CF unici (dopo la separazione clienti/fornitori)
+migrate_anagrafiche_schema()
+
 # Esegui migrazione access.badge → idCardRegistry (dopo sync e create)
 migrate_access_badge_to_idCardRegistry()
 
@@ -904,6 +1076,9 @@ migrate_in_out_idCardRegistry()
 
 # Esegui migrazione campo mode (STANDARD/TRANSIT)
 migrate_access_mode()
+
+# Stampino dei dati sulle pesate già esistenti (per ultimo: usa i dati già migrati)
+migrate_in_out_snapshot()
 
 # Create default users
 def create_default_users():

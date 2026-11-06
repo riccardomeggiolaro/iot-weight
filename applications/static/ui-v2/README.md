@@ -47,7 +47,7 @@ js/views/placeholder.js  sezioni non ancora pronte
 | Impianto      | vista 3D esistente |
 | Prenotazioni  | pronta: schede Multiple, Permanenti, Transiti (filtro Attive / Concluse / Tutte, stato Attiva / Conclusa; crea, modifica, concludi, elimina, dettaglio pesate con PDF, foto ed eliminazione dell'ultima pesata); aggiornamento in tempo reale |
 | Pesate        | pronta (voce di menu a sé): una riga per pesata, filtri, dettaglio con foto, PDF, modifica dati, eliminazione dell'ultima pesata, export Excel/PDF |
-| Anagrafiche   | pronta: veicoli, clienti, fornitori, vettori, materiali, autisti, tessere — ricerca, ordinamento, inserimento/modifica/eliminazione con blocco del record, import CSV/Excel, aggiornamento in tempo reale |
+| Anagrafiche   | pronta: veicoli, clienti, fornitori, vettori, materiali, autisti, tessere — ricerca, ordinamento, inserimento/modifica/eliminazione con blocco del record, codice del gestionale, archiviazione (Elimina archivia le anagrafiche già usate; vista Archiviati con Ripristina), import CSV/Excel, aggiornamento in tempo reale |
 | Report        | da fare |
 | Impostazioni  | da fare (configurazione guidata) |
 

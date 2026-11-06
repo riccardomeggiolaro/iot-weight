@@ -1,4 +1,5 @@
 from modules.md_database.md_database import SessionLocal, Customer, Supplier, Vector, Driver, Vehicle, Material, Access, AccessStatus, Weighing, Operator, TypeAccess, CardRegistry
+from modules.md_database.functions.find_or_create_anagrafic import find_or_create_anagrafic
 from modules.md_database.interfaces.access import SetAccessDTO
 from modules.md_database.functions.get_access_by_vehicle_id_if_uncompete import get_access_by_vehicle_id_if_uncomplete
 from modules.md_database.functions.get_access_by_identify_if_uncomplete import get_access_by_identify_if_uncomplete
@@ -36,14 +37,12 @@ def update_access(id: int, data: SetAccessDTO, idInOut: int = None):
                 if data.customer.id in [None, -1]:
                     add_customer = {
                         "social_reason": data.customer.social_reason if data.customer.social_reason != "" else None,
-                        "telephone": data.customer.telephone if data.customer.telephone != "" else None,
+                        "code": data.customer.code if data.customer.code != "" else None,
                         "cfpiva": data.customer.cfpiva if data.customer.cfpiva != "" else None
                     }
                     if has_non_none_value(add_customer):
                         data_to_check = data.customer.dict()
-                        customer = current_model(**add_customer)
-                        session.add(customer)
-                        session.flush()
+                        customer = find_or_create_anagrafic(session, current_model, add_customer)
                         access.idCustomer = customer.id
                     elif data.customer.id == -1:
                         access.idCustomer = None
@@ -55,14 +54,12 @@ def update_access(id: int, data: SetAccessDTO, idInOut: int = None):
                 if data.supplier.id in [None, -1]:
                     add_supplier = {
                         "social_reason": data.supplier.social_reason if data.supplier.social_reason != "" else None,
-                        "telephone": data.supplier.telephone if data.supplier.telephone != "" else None,
+                        "code": data.supplier.code if data.supplier.code != "" else None,
                         "cfpiva": data.supplier.cfpiva if data.supplier.cfpiva != "" else None
                     }
                     if has_non_none_value(add_supplier):
                         data_to_check = data.supplier.dict()
-                        supplier = current_model(**add_supplier)
-                        session.add(supplier)
-                        session.flush()
+                        supplier = find_or_create_anagrafic(session, current_model, add_supplier)
                         access.idSupplier = supplier.id
                     elif data.supplier.id == -1:
                         access.idSupplier = None
@@ -74,14 +71,12 @@ def update_access(id: int, data: SetAccessDTO, idInOut: int = None):
                 if data.vector.id in [None, -1]:
                     add_vector = {
                         "social_reason": data.vector.social_reason if data.vector.social_reason != "" else None,
-                        "telephone": data.vector.telephone if data.vector.telephone != "" else None,
+                        "code": data.vector.code if data.vector.code != "" else None,
                         "cfpiva": data.vector.cfpiva if data.vector.cfpiva != "" else None
                     }
                     if has_non_none_value(add_vector):
                         data_to_check = data.vector.dict()
-                        vector = current_model(**add_vector)
-                        session.add(vector)
-                        session.flush()
+                        vector = find_or_create_anagrafic(session, current_model, add_vector)
                         access.idVector = vector.id
                     elif data.vector.id == -1:
                         access.idVector = None
@@ -97,9 +92,7 @@ def update_access(id: int, data: SetAccessDTO, idInOut: int = None):
                     }
                     if has_non_none_value(add_driver):
                         data_to_check = data.driver.dict()
-                        driver = current_model(**add_driver)
-                        session.add(driver)
-                        session.flush()
+                        driver = find_or_create_anagrafic(session, current_model, add_driver)
                         access.idDriver = driver.id
                     elif data.driver.id == -1:
                         access.idDriver = None
@@ -130,9 +123,7 @@ def update_access(id: int, data: SetAccessDTO, idInOut: int = None):
                     }
                     if has_non_none_value(add_vehicle):
                         data_to_check = data.vehicle.dict()
-                        vehicle = current_model(**add_vehicle)
-                        session.add(vehicle)
-                        session.flush()
+                        vehicle = find_or_create_anagrafic(session, current_model, add_vehicle)
                         access.idVehicle = vehicle.id
                     elif data.vehicle.id == -1:
                         access.idVehicle = None
@@ -159,9 +150,7 @@ def update_access(id: int, data: SetAccessDTO, idInOut: int = None):
                 }
                 if has_non_none_value(add_material):
                     data_to_check = data.material.dict()
-                    material = current_model(**add_material)
-                    session.add(material)
-                    session.flush()
+                    material = find_or_create_anagrafic(session, current_model, add_material)
                     access.idMaterial = material.id
                 elif data.material.id == -1:
                     access.idMaterial = None
@@ -177,9 +166,7 @@ def update_access(id: int, data: SetAccessDTO, idInOut: int = None):
                 }
                 if has_non_none_value(add_material):
                     data_to_check = data.material.dict()
-                    material = current_model(**add_material)
-                    session.add(material)
-                    session.flush()
+                    material = find_or_create_anagrafic(session, current_model, add_material)
                     # Find the correct in_out object by id and update its material
                     for in_out in access.in_out:
                         if in_out.id == idInOut:
@@ -203,14 +190,12 @@ def update_access(id: int, data: SetAccessDTO, idInOut: int = None):
             if idInOut and data.customer.id in [None, -1]:
                 add_customer = {
                     "social_reason": data.customer.social_reason if data.customer.social_reason != "" else None,
-                    "telephone": data.customer.telephone if data.customer.telephone != "" else None,
+                    "code": data.customer.code if data.customer.code != "" else None,
                     "cfpiva": data.customer.cfpiva if data.customer.cfpiva != "" else None
                 }
                 if has_non_none_value(add_customer):
                     data_to_check = data.customer.dict()
-                    customer = current_model(**add_customer)
-                    session.add(customer)
-                    session.flush()
+                    customer = find_or_create_anagrafic(session, current_model, add_customer)
                     for in_out in access.in_out:
                         if in_out.id == idInOut:
                             in_out.idCustomer = customer.id
@@ -231,14 +216,12 @@ def update_access(id: int, data: SetAccessDTO, idInOut: int = None):
             if idInOut and data.supplier.id in [None, -1]:
                 add_supplier = {
                     "social_reason": data.supplier.social_reason if data.supplier.social_reason != "" else None,
-                    "telephone": data.supplier.telephone if data.supplier.telephone != "" else None,
+                    "code": data.supplier.code if data.supplier.code != "" else None,
                     "cfpiva": data.supplier.cfpiva if data.supplier.cfpiva != "" else None
                 }
                 if has_non_none_value(add_supplier):
                     data_to_check = data.supplier.dict()
-                    supplier = current_model(**add_supplier)
-                    session.add(supplier)
-                    session.flush()
+                    supplier = find_or_create_anagrafic(session, current_model, add_supplier)
                     for in_out in access.in_out:
                         if in_out.id == idInOut:
                             in_out.idSupplier = supplier.id
@@ -259,14 +242,12 @@ def update_access(id: int, data: SetAccessDTO, idInOut: int = None):
             if idInOut and data.vector.id in [None, -1]:
                 add_vector = {
                     "social_reason": data.vector.social_reason if data.vector.social_reason != "" else None,
-                    "telephone": data.vector.telephone if data.vector.telephone != "" else None,
+                    "code": data.vector.code if data.vector.code != "" else None,
                     "cfpiva": data.vector.cfpiva if data.vector.cfpiva != "" else None
                 }
                 if has_non_none_value(add_vector):
                     data_to_check = data.vector.dict()
-                    vector = current_model(**add_vector)
-                    session.add(vector)
-                    session.flush()
+                    vector = find_or_create_anagrafic(session, current_model, add_vector)
                     for in_out in access.in_out:
                         if in_out.id == idInOut:
                             in_out.idVector = vector.id
@@ -291,9 +272,7 @@ def update_access(id: int, data: SetAccessDTO, idInOut: int = None):
                 }
                 if has_non_none_value(add_driver):
                     data_to_check = data.driver.dict()
-                    driver = current_model(**add_driver)
-                    session.add(driver)
-                    session.flush()
+                    driver = find_or_create_anagrafic(session, current_model, add_driver)
                     for in_out in access.in_out:
                         if in_out.id == idInOut:
                             in_out.idDriver = driver.id

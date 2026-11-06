@@ -36,6 +36,11 @@ def add_anagrafic_if_not_exists(table_name: str, name: str, value: str) -> Dict[
         ).first()
 
         if anagrafic:
+            # un'anagrafica archiviata usata di nuovo torna attiva
+            if getattr(anagrafic, "archived", False):
+                anagrafic.archived = False
+                session.commit()
+                session.refresh(anagrafic)
             return anagrafic.__dict__
 
         # Create new record

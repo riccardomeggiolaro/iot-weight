@@ -163,16 +163,24 @@ class ModuleUpdating:
 			"in_out": None,
 		}
 		if in_out:
-			access = in_out.access
+			from applications.utils.utils_report import (resolve_in_out_customer, resolve_in_out_supplier, resolve_in_out_vector,
+				resolve_in_out_driver, resolve_in_out_material, in_out_plate)
+			customer, supplier, vector = resolve_in_out_customer(in_out), resolve_in_out_supplier(in_out), resolve_in_out_vector(in_out)
+			driver, material = resolve_in_out_driver(in_out), resolve_in_out_material(in_out)
 			data["in_out"] = {
 				"id": in_out.id,
 				"idAccess": in_out.idAccess,
-				"customer": in_out.customer.social_reason if in_out.customer else None,
-				"supplier": in_out.supplier.social_reason if in_out.supplier else None,
-				"vector": in_out.vector.social_reason if in_out.vector else None,
-				"driver": in_out.driver.social_reason if in_out.driver else None,
-				"plate": access.vehicle.plate if access and access.vehicle else None,
-				"material": in_out.material.description if in_out.material else None,
+				# dati dallo stampino della pesata (com'erano al momento della pesata)
+				"customer": customer.social_reason if customer else None,
+				"customer_code": customer.code if customer else None,
+				"supplier": supplier.social_reason if supplier else None,
+				"supplier_code": supplier.code if supplier else None,
+				"vector": vector.social_reason if vector else None,
+				"vector_code": vector.code if vector else None,
+				"driver": driver.social_reason if driver else None,
+				"plate": in_out_plate(in_out),
+				"material": material.description if material else None,
+				"material_code": material.code if material else None,
 				"weight1_pid": in_out.weight1.pid if in_out.weight1 else None,
 				"weight1": in_out.weight1.weight if in_out.weight1 else None,
 				"weight2_pid": in_out.weight2.pid if in_out.weight2 else None,
