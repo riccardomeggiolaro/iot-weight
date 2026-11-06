@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Accesso · Pesa</title>
+  <link rel="icon" href="/static/content/baronpesi_favicon.png">
+  <link rel="stylesheet" href="/css/app.css">
+  <link rel="stylesheet" href="/css/login.css">
+</head>
+<body>
+  <main class="login">
+    <form class="card login-card" id="login-form" novalidate>
+      <div class="brand">P</div>
+      <h1>Accedi</h1>
+      <p class="muted">Inserisci le credenziali per gestire le pese.</p>
+      <label class="login-field">
+        <span>Nome utente</span>
+        <input class="input" id="username" name="username" autocomplete="username" autocapitalize="none" required autofocus>
+      </label>
+      <label class="login-field">
+        <span>Password</span>
+        <input class="input" id="password" name="password" type="password" autocomplete="current-password" required>
+      </label>
+      <p class="login-error" id="login-error" role="alert" hidden></p>
+      <button class="btn primary login-submit" id="login-submit" type="submit">Accedi</button>
+    </form>
+  </main>
+  <script type="module" src="/js/login.js"></script>
+</body>
+</html>
