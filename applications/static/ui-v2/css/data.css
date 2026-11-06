@@ -181,3 +181,10 @@ textarea.input { resize: vertical; font: inherit; }
 }
 .settings-head-actions { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .users-list { overflow-x: auto; position: relative; }
+.inline-form { display: flex; gap: 8px; flex: 1; justify-content: flex-end; min-width: 240px; }
+.inline-form .input { max-width: 340px; }
+.file-btn { cursor: pointer; }
+.backups { overflow-x: auto; position: relative; max-height: 420px; overflow-y: auto; }
+.backups-msg { padding: 12px 18px; }
+.log-view { white-space: pre-wrap; font-size: 12px; max-height: 60vh; overflow: auto; background: var(--surface-2); border-radius: 8px; padding: 12px; margin: 0; }
+.settings-row code { font-size: 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 5px; padding: 0 5px; }
