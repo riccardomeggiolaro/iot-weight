@@ -84,13 +84,26 @@ export function renderPesa(el) {
   const slot = name => el.querySelector(`[data-slot="${name}"]`);
 
   // ── Rendering ──────────────────────────────────────────────
+  // I pulsanti si creano una volta sola e poi si aggiornano sul posto: il peso arriva
+  // più volte al secondo e ricrearli a ogni messaggio fa perdere i clic (il pulsante
+  // premuto viene sostituito prima del rilascio).
   function renderTabs() {
     const tabs = $('.weigher-tabs');
-    tabs.innerHTML = plant.weighers.map(w => {
-      const st = weightState(w);
-      return `<button class="weigher-tab" role="tab" data-weigher="${esc(w.id)}" aria-selected="${w === current}">
-        <span class="dot ${st.kind}"></span>${esc(w.name)}<span class="w">${esc(formatKg(w.realtime?.gross_weight))} kg</span></button>`;
-    }).join('');
+    const ids = plant.weighers.map(w => w.id).join('|');
+    if (tabs.dataset.ids !== ids) {
+      tabs.dataset.ids = ids;
+      tabs.innerHTML = plant.weighers.map(w => `<button type="button" class="weigher-tab" role="tab" data-weigher="${esc(w.id)}">
+        <span class="dot"></span>${esc(w.name)}<span class="w"></span></button>`).join('');
+    }
+    plant.weighers.forEach((w, i) => {
+      const btn = tabs.children[i];
+      const dot = `dot ${weightState(w).kind}`;
+      const kg = `${formatKg(w.realtime?.gross_weight)} kg`;
+      const sel = String(w === current);
+      if (btn.getAttribute('aria-selected') !== sel) btn.setAttribute('aria-selected', sel);
+      if (btn.firstElementChild.className !== dot) btn.firstElementChild.className = dot;
+      if (btn.lastElementChild.textContent !== kg) btn.lastElementChild.textContent = kg;
+    });
   }
 
   function renderWeight() {
@@ -314,7 +327,7 @@ export function renderPesa(el) {
     requestAnimationFrame(() => { queued = false; renderWeight(); renderTabs(); });
   };
   const offs = [
-    plant.on('realtime', ({ weigher }) => { if (weigher === current) queueWeight(); else renderTabs(); }),
+    plant.on('realtime', () => queueWeight()),
     plant.on('connection', () => { renderTabs(); renderWeight(); }),
     plant.on('data', ({ weigher }) => { if (weigher === current) { renderSelected(); renderAccesses(); } }),
     plant.on('relays', ({ weigher }) => { if (weigher === current) renderRelays(); }),
