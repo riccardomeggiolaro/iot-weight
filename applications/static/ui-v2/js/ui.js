@@ -124,7 +124,8 @@ export function openDialog({ title, body = '', actions = [{ label: 'Chiudi', val
 /** Conferma semplice: resolve true/false. */
 export async function confirmDialog(title, html, { label = 'Conferma', kind = 'primary', onConfirm } = {}) {
   const r = await openDialog({
-    title, body: html, onSubmit: onConfirm,
+    // il risultato dell'azione non conta: se non lancia errori la conferma è riuscita
+    title, body: html, onSubmit: onConfirm ? async () => { await onConfirm(); } : undefined,
     actions: [{ label: 'Annulla', value: false }, { label, kind, submit: true }],
   });
   return r === true;

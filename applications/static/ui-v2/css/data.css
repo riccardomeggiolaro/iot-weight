@@ -179,3 +179,5 @@ textarea.input { resize: vertical; font: inherit; }
   .segmented { width: 100%; }
   .segmented label { flex: 1; text-align: center; }
 }
+.settings-head-actions { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.users-list { overflow-x: auto; position: relative; }
