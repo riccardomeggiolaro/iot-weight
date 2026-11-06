@@ -134,3 +134,8 @@
 @media (max-width: 720px) {
   .activity-drawer { left: 12px; bottom: 64px; width: calc(100vw - 24px); }
 }
+
+/* Dati pesata (sotto i comandi) */
+.data-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.data-hint { font-size: 12px; font-weight: 600; }
+.ai-badge { font-style: normal; font-size: 11px; font-weight: 700; color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); border-radius: 999px; padding: 1px 7px; margin-left: 4px; }

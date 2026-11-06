@@ -3,6 +3,7 @@
 
 import { api, openProtectedFile } from '../api.js';
 import { plant, weightState } from '../plant.js';
+import { anagraficInput } from '../anagrafic-input.js';
 import { esc, formatKg, formatTime, toast, openDialog } from '../ui.js';
 
 const SELECTED_KEY = 'ui-v2.selectedWeigher';
@@ -63,6 +64,10 @@ export function renderPesa(el) {
             <button class="btn" data-act="zero">Zero <span class="kbd">F4</span></button>
             <button class="btn" data-act="reprint">Ristampa</button>
           </div>
+        </section>
+        <section class="card data-card" aria-labelledby="h-data">
+          <div class="card-h"><h2 id="h-data">Dati pesata</h2><span class="muted data-hint" data-slot="data-hint"></span></div>
+          <div class="card-b"><div class="form-grid data-grid" data-slot="data-form"></div></div>
         </section>
       </div>
 
@@ -219,6 +224,123 @@ export function renderPesa(el) {
       </div>`).join('');
   }
 
+  // ── Dati pesata ────────────────────────────────────────────
+  // Ogni campo viene mandato alla pesa appena confermato (scelta dall'elenco o uscita
+  // dal campo), come nella vecchia interfaccia. Dalla targa si può anche scegliere
+  // una prenotazione attiva: viene selezionata e riempie gli altri dati.
+  const DATA_LINKS = [
+    { key: 'customer', field: 'social_reason', label: 'Cliente', secondary: r => r.code || r.description },
+    { key: 'supplier', field: 'social_reason', label: 'Fornitore', secondary: r => r.code || r.description },
+    { key: 'vector', field: 'social_reason', label: 'Vettore', secondary: r => r.code || r.description },
+    { key: 'driver', field: 'social_reason', label: 'Autista', secondary: r => r.code || r.description },
+    { key: 'material', field: 'description', label: 'Materiale', secondary: r => r.code },
+  ];
+  const DATA_TEXT = [['document_reference', 'Riferimento documento'], ['note', 'Note']];
+  const useAnagrafic = key => plant.config?.use_anagrafic?.[key] !== false;
+  const dataInputs = {};
+
+  async function patchData(body, query = {}, force = []) {
+    try {
+      const res = await api('/api/data', { method: 'PATCH', query: { ...plant.query(current), ...query }, body });
+      if (res?.detail) toast(res.detail, 'err');
+    } catch (err) { toast(err.message, 'err'); }
+    await plant.refreshData(current);
+    syncDataForm(force);
+  }
+
+  function buildDataForm() {
+    const box = slot('data-form');
+    box.innerHTML = '';
+    dataInputs.vehicle = anagraficInput({
+      name: 'vehicle', field: 'plate', label: 'Targa', upper: true, optionalHint: false,
+      placeholder: 'Targa o prenotazione…', secondary: r => r.description,
+      // le prenotazioni attive compaiono per prime
+      extra: text => {
+        const q = text.toUpperCase();
+        return accesses
+          .filter(a => !q || accessLabel(a).toUpperCase().includes(q) || accessInfo(a).toUpperCase().includes(q))
+          .slice(0, 5)
+          .map(a => ({ id: `acc-${a.id}`, plate: accessLabel(a), _access: a,
+            _tag: a.in_out?.some(io => io.idWeight1) ? 'Dentro' : a.type === 'RESERVATION' ? 'Prenotazione' : 'Accesso',
+            _sub: accessInfo(a) }));
+      },
+      onPick: it => {
+        if (it._access) { selectAccess(it._access.id, true); return true; }
+        patchData({ data_in_execution: { vehicle: { id: it.id } }, id_selected: {} }, { auto_select: true }, ['vehicle']);
+        return false;
+      },
+    });
+    dataInputs.vehicle.input.addEventListener('change', () => commitPlate());
+    box.appendChild(dataInputs.vehicle.el);
+
+    for (const l of DATA_LINKS) {
+      if (!useAnagrafic(l.key)) continue;
+      const c = anagraficInput({ name: l.key, field: l.field, label: l.label, optionalHint: false, secondary: l.secondary });
+      c.input.addEventListener('change', () => commitLink(l, c));
+      dataInputs[l.key] = c;
+      box.appendChild(c.el);
+    }
+    for (const [k, label] of DATA_TEXT) {
+      if (!useAnagrafic(k)) continue;
+      const f = document.createElement('label');
+      f.className = `field ${k === 'note' ? 'wide' : ''}`;
+      f.innerHTML = `<span>${esc(label)}</span>${k === 'note'
+        ? '<textarea class="input" name="note" rows="2"></textarea>'
+        : `<input class="input" name="${k}" autocomplete="off">`}`;
+      const input = f.querySelector('.input');
+      input.addEventListener('change', () => {
+        const v = input.value.trim();
+        if (v === (current.data?.data_in_execution?.[k] || '')) return;
+        patchData({ data_in_execution: { [k]: v } });
+      });
+      dataInputs[k] = { el: f, input, set: v => { input.value = v || ''; } };
+      box.appendChild(f);
+    }
+  }
+
+  function commitLink(l, c) {
+    // la scelta dall'elenco arriva qui subito; la scrittura libera all'uscita dal campo
+    setTimeout(() => {
+      const cur = current.data?.data_in_execution?.[l.key] || {};
+      const text = c.input.value.trim();
+      const id = c.selectedId();
+      if (!text) {
+        if (cur.id || cur[l.field]) patchData({ data_in_execution: { [l.key]: { id: -1, [l.field]: '' } } });
+        return;
+      }
+      if (id) { if (id !== cur.id) patchData({ data_in_execution: { [l.key]: { id } } }); return; }
+      if (text.toLowerCase() !== String(cur[l.field] || '').toLowerCase() || cur.id) {
+        patchData({ data_in_execution: { [l.key]: { [l.field]: text } } });
+      }
+    }, 0);
+  }
+
+  function commitPlate() {
+    setTimeout(() => {
+      const { die, ids } = selectedInfo();
+      const text = dataInputs.vehicle.input.value.trim().toUpperCase();
+      const curPlate = (die.vehicle?.plate || '').toUpperCase();
+      if (text === curPlate) return;
+      if (!text) { if (ids.id) selectAccess(ids.id); else if (curPlate) clearSelection(); return; }
+      // targa digitata: usa la prenotazione attiva con quella targa, se c'è
+      usePlate(text);
+    }, 0);
+  }
+
+  // Riporta nei campi i dati della pesa. Il campo in cui si sta scrivendo non viene
+  // toccato, salvo quelli in `force` (es. la targa dopo aver scelto una prenotazione).
+  function syncDataForm(force = []) {
+    const die = current.data?.data_in_execution || {};
+    const focused = document.activeElement;
+    for (const [k, c] of Object.entries(dataInputs)) {
+      if (c.el.contains(focused) && !force.includes(k)) continue;
+      c.set(k === 'note' || k === 'document_reference' ? die[k] : die[k] || null);
+    }
+    const { ids } = selectedInfo();
+    const a = ids.id ? accesses.find(x => x.id === ids.id) : null;
+    slot('data-hint').textContent = ids.id ? (a?.type === 'RESERVATION' ? 'Prenotazione selezionata' : 'Accesso selezionato') : '';
+  }
+
   function renderAuto() {
     const box = slot('auto');
     box.innerHTML = plant.isAutomatic
@@ -251,7 +373,7 @@ export function renderPesa(el) {
 
   function renderAll() {
     renderTabs(); renderWeight(); renderSelected(); renderAccesses();
-    renderPhoto(); renderRelays(); renderAuto(); renderActivity();
+    renderPhoto(); renderRelays(); renderAuto(); renderActivity(); syncDataForm();
   }
 
   // ── Dati ───────────────────────────────────────────────────
@@ -263,12 +385,13 @@ export function renderPesa(el) {
     renderAccesses();
   }
 
-  async function selectAccess(id) {
-    const already = current.data?.id_selected?.id === id;
+  async function selectAccess(id, keep = false) {
+    const already = !keep && current.data?.id_selected?.id === id;
     try {
       await api('/api/data', { method: 'PATCH', query: plant.query(current), body: { data_in_execution: {}, id_selected: { id: already ? -1 : id } } });
     } catch (err) { toast(err.message, 'err'); }
     await plant.refreshData(current);
+    syncDataForm(['vehicle']);
   }
 
   async function usePlate(text) {
@@ -276,17 +399,19 @@ export function renderPesa(el) {
     if (!plate) return;
     // Se corrisponde a un mezzo in impianto lo seleziono, altrimenti imposto la targa
     const match = accesses.find(a => (a.vehicle?.plate || '').toUpperCase() === plate);
-    if (match) return selectAccess(match.id);
+    if (match) return selectAccess(match.id, true);
     try {
       await api('/api/data', { method: 'PATCH', query: { ...plant.query(current), auto_select: true }, body: { data_in_execution: { vehicle: { plate } }, id_selected: {} } });
     } catch (err) { toast(err.message, 'err'); }
     await plant.refreshData(current);
+    syncDataForm(['vehicle']);
   }
 
   async function clearSelection() {
     try { await api('/api/data', { method: 'DELETE', query: plant.query(current) }); }
     catch (err) { toast(err.message, 'err'); }
     await plant.refreshData(current);
+    syncDataForm(['vehicle']);
   }
 
   // Preset tara: chiede il valore in kg e lo imposta sulla pesa
@@ -382,7 +507,7 @@ export function renderPesa(el) {
   const offs = [
     plant.on('realtime', () => queueWeight()),
     plant.on('connection', () => { renderTabs(); renderWeight(); }),
-    plant.on('data', ({ weigher }) => { if (weigher === current) { renderSelected(); renderAccesses(); } }),
+    plant.on('data', ({ weigher }) => { if (weigher === current) { renderSelected(); renderAccesses(); syncDataForm(); } }),
     plant.on('relays', ({ weigher }) => { if (weigher === current) renderRelays(); }),
     plant.on('picture', ({ weigher }) => { if (weigher === current) { renderPhoto(true); renderActivity(); } }),
     plant.on('flash', ({ weigher }) => { if (weigher === current) renderPhoto(true); }),
@@ -406,6 +531,7 @@ export function renderPesa(el) {
   ];
   const poll = setInterval(loadAccesses, 30000);
 
+  buildDataForm();
   renderAll();
   plant.refreshData(current);
   loadAccesses();
