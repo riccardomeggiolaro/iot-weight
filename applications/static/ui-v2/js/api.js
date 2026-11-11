@@ -32,9 +32,11 @@ export async function api(path, { method = 'GET', body, query } = {}) {
     url += (url.includes('?') ? '&' : '?') + qs;
   }
   const headers = { 'Authorization': `Bearer ${token}` };
-  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  // FormData (es. upload di file): il browser imposta da solo il Content-Type multipart
+  const isForm = typeof FormData !== 'undefined' && body instanceof FormData;
+  if (body !== undefined && !isForm) headers['Content-Type'] = 'application/json';
 
-  const res = await fetch(url, { method, headers, body: body !== undefined ? JSON.stringify(body) : undefined });
+  const res = await fetch(url, { method, headers, body: body === undefined ? undefined : isForm ? body : JSON.stringify(body) });
   if (res.status === 401) { logout(); throw new ApiError('Sessione scaduta', 401); }
 
   const type = res.headers.get('content-type') || '';

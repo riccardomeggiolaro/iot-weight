@@ -12,6 +12,7 @@ let selectedSupplier = { id: null, social_reason: '' };
 let selectedVector = { id: null, social_reason: '' };
 let selectedDriver = { id: null, social_reason: '' };
 let selectedMaterial = { id: null, description: '' };
+let selectedCard = { id: null, number: '', code: '' };
 
 let dataInExecution = null;
 let selectedIdWeight = null;
@@ -113,8 +114,9 @@ let _waitingForStartPage = false;
 
 // Find the next step with an empty field, starting after the given step
 // Skips steps disabled in totem config or already set on the reservation
-function _findNextEnabledStep(afterStep, ignoreMode = false) {
-    if (!ignoreMode && weigherMode === "AUTOMATIC") return null;
+function _findNextEnabledStep(afterStep) {
+    // In automatic mode empty fields are never requested: go straight to summary
+    if (weigherMode === "AUTOMATIC") return null;
     const steps = [
         { name: 'customer', enabled: totemAnagrafiche.customer, hasData: () => !!selectedCustomer.id },
         { name: 'supplier', enabled: totemAnagrafiche.supplier, hasData: () => !!selectedSupplier.id },
@@ -510,6 +512,7 @@ function cancelTotem() {
         selectedVector = { id: null, social_reason: '' };
         selectedDriver = { id: null, social_reason: '' };
         selectedMaterial = { id: null, description: '' };
+        selectedCard = { id: null, number: '', code: '' };
         selectedIdWeight = null;
         dataInExecution = null;
         goTo(totemAnagrafiche.card !== false ? 'card' : 'plate');
@@ -872,6 +875,7 @@ async function getData(path) {
         selectedVector = { id: obj.vector.id, social_reason: obj.vector.social_reason || '' };
         selectedDriver = { id: obj.driver?.id || null, social_reason: obj.driver?.social_reason || '' };
         selectedMaterial = { id: obj.material.id, description: obj.material.description || '' };
+        selectedCard = { id: res.card?.id || null, number: res.card?.number || '', code: res.card?.code || '' };
 
         _dataLoaded = true;
         _resolveStartPage();
@@ -954,6 +958,7 @@ function processRealtimeObject(obj) {
         selectedVector = { id: d.vector.id, social_reason: d.vector.social_reason || '' };
         selectedDriver = { id: d.driver?.id || null, social_reason: d.driver?.social_reason || '' };
         selectedMaterial = { id: d.material.id, description: d.material.description || '' };
+        selectedCard = { id: obj.card?.id || null, number: obj.card?.number || '', code: obj.card?.code || '' };
 
         // If access was deselected, go back to start (unless weighing is completing)
         if (prevId && (!obj.id_selected || obj.id_selected.id === null)) {
@@ -966,7 +971,7 @@ function processRealtimeObject(obj) {
         // If a new access was selected (from dashboard), navigate to first empty field or summary
         if (!prevId && obj.id_selected && obj.id_selected.id !== null) {
             const dest = _findNextEnabledStep('plate');
-            if (_currentViewName === 'plate' && selectedVehicle.plate && typeof onDataUpdate === 'function') {
+            if (weigherMode !== "AUTOMATIC" && _currentViewName === 'plate' && selectedVehicle.plate && typeof onDataUpdate === 'function') {
                 onDataUpdate();
             } else {
                 goTo(dest || 'summary');

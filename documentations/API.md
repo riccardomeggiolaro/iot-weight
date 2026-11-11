@@ -248,7 +248,7 @@ Richiede permessi di scrittura. La **targa è obbligatoria** (tramite `vehicle.p
 | Campo | Valori |
 |-------|--------|
 | `type` | `RESERVATION`, `MANUALLY`, `TEST` |
-| `mode` | `STANDARD`, `TRANSIT` |
+| `mode` | `STANDARD`, `TRANSIT`, `GENERIC` (ogni pesata è una pesata generica; l'accesso si chiude dopo `number_in_out` pesate) |
 
 > Cliente e fornitore sono indipendenti: si possono indicare entrambi, uno solo o nessuno.
 > Per i campi anagrafici (customer, supplier, vehicle, ecc.) si può passare solo l'`id` di un record esistente, oppure i dati completi per creare un nuovo record al volo. Usare `id: null` o `id: -1` per non fare riferimento a un record esistente.
@@ -624,6 +624,51 @@ Stream continuo con peso lordo, netto, tara, stato bilancia.
 ### Diagnostica bilancia
 ```
 WS /api/command-weigher/diagnostic?token=<jwt>&instance_name=...&weigher_name=...
+```
+
+---
+
+## 9. Broker MQTT
+
+Invio di ogni pesata (dati, foto, PDF e CSV in base64) a un broker MQTT in TLS, QoS 1.
+I messaggi vengono salvati in una coda su disco (`message_broker.outbox_dir`) e rimossi
+solo dopo la conferma del broker; quelli rifiutati finiscono tra i falliti.
+Il client ID è generato automaticamente ed è anche il topic di pubblicazione.
+Tutti gli endpoint richiedono il super amministratore.
+
+### Configurazione attuale
+```
+GET /api/message-broker
+```
+Restituisce `broker` (senza password, con `has_password`), `client_id`, `topic` e `certificates`
+(`ca`, `cert`, `key`: presenza, soggetto e scadenza).
+
+### Salva e collega
+```
+POST /api/message-broker   (multipart/form-data)
+```
+| Campo | Descrizione |
+|-------|-------------|
+| `host`, `port` | Indirizzo del broker (porta predefinita 8883) |
+| `username`, `password` | Facoltativi se si usa il certificato client; password vuota = invariata |
+| `ca_file`, `cert_file`, `key_file` | File PEM (max 256 KB); senza CA si usano i certificati di sistema |
+| `remove_ca`, `remove_client_cert` | Rimuovono i file già installati |
+| `include_images`, `include_pdf`, `include_csv` | Allegati del messaggio (predefinito `true`) |
+
+### Stato
+```
+GET /api/message-broker/test
+```
+`configured`, `connected`, `pending`, `failed`, `last_error`, `last_sent_at`.
+
+### Rinvia i messaggi falliti
+```
+POST /api/message-broker/retry-failed
+```
+
+### Scollega
+```
+DELETE /api/message-broker
 ```
 
 ---

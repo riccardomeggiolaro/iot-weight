@@ -1,4 +1,4 @@
-// Impostazioni › Integrazioni: cartella remota sincronizzata, pannello a messaggi, sirena.
+// Impostazioni › Integrazioni: cartella remota sincronizzata, broker MQTT, pannello a messaggi, sirena.
 
 import { api } from '../api.js';
 import { esc, toast, confirmDialog } from '../ui.js';
@@ -10,6 +10,7 @@ export function renderIntegrazioni(el, { level }) {
     return;
   }
   syncFolder(el);
+  messageBroker(el);
   device(el, {
     name: 'panel', title: 'Pannello a messaggi',
     description: 'Display che mostra le targhe chiamate in pesa.',
@@ -84,6 +85,115 @@ function syncFolder(el) {
       const ok = await confirmDialog('Scollega cartella remota', '<p>Smettere di copiare i file nella cartella remota?</p>',
         { label: 'Scollega', kind: 'danger', onConfirm: () => api('/api/sync-folder', { method: 'DELETE' }) });
       if (ok) { toast('Cartella remota scollegata', 'ok'); load(); }
+    });
+  }
+  load();
+}
+
+// ── Broker MQTT ──────────────────────────────────────────────────────────────
+const fmtDate = v => { if (!v) return ''; const d = new Date(v); return isNaN(d) ? String(v) : d.toLocaleString('it-IT'); };
+
+function messageBroker(el) {
+  const rows = section(el, 'Broker MQTT',
+    'Invio di ogni pesata (dati, foto, PDF e CSV) a un broker MQTT in TLS. I messaggi restano in coda finché il broker non conferma la ricezione.');
+  const box = document.createElement('div');
+  rows.appendChild(box);
+
+  async function load() {
+    box.innerHTML = '<p class="muted backups-msg">Caricamento…</p>';
+    let cfg, st = null;
+    try { cfg = await api('/api/message-broker'); } catch (err) { box.innerHTML = `<p class="dt-empty err">${esc(err.message)}</p>`; return; }
+    const b = cfg.broker;
+    if (b) { try { st = await api('/api/message-broker/test'); } catch (_) { /* stato non disponibile */ } }
+    const certs = cfg.certificates || {};
+    const certInfo = kind => {
+      const c = certs[kind] || {};
+      if (!c.present) return '<em class="muted">nessuno</em>';
+      return `installato${c.subject ? ` · ${esc(c.subject)}` : ''}${c.expires_at ? ` · scade il ${esc(fmtDate(c.expires_at))}` : ''}`;
+    };
+    const check = (name, label, on) => `<label class="check"><input type="checkbox" name="${name}" ${on ? 'checked' : ''}> ${esc(label)}</label>`;
+
+    box.innerHTML = `
+      <form class="device-form">
+        <div class="form-grid">
+          <label class="field"><span>Host</span><input class="input" name="host" required placeholder="es. broker.esempio.it" value="${esc(b?.host || '')}" autocomplete="off"></label>
+          <label class="field"><span>Porta</span><input class="input" name="port" type="number" min="1" max="65535" required value="${esc(b?.port ?? 8883)}"></label>
+          <label class="field"><span>Utente</span><input class="input" name="username" value="${esc(b?.username || '')}" autocomplete="off"></label>
+          <label class="field"><span>Password${b?.has_password ? ' <em class="muted">(vuoto: invariata)</em>' : ''}</span><input class="input" name="password" type="password" autocomplete="new-password"></label>
+          <label class="field"><span>Certificato CA</span><input class="input" name="ca_file" type="file" accept=".pem,.crt,.cer"><small class="muted">Attuale: ${certInfo('ca')}</small></label>
+          <label class="field"><span>Certificato client</span><input class="input" name="cert_file" type="file" accept=".pem,.crt,.cer"><small class="muted">Attuale: ${certInfo('cert')}</small></label>
+          <label class="field"><span>Chiave client</span><input class="input" name="key_file" type="file" accept=".pem,.key"><small class="muted">Attuale: ${certInfo('key')}</small></label>
+        </div>
+        <p class="muted">Autenticazione con utente e password, con certificato e chiave client (mTLS) o con entrambi. Senza certificato CA si usano i certificati di sistema.</p>
+        <div class="mb-checks">
+          ${check('include_images', 'Allega le foto', b ? b.include_images : true)}
+          ${check('include_pdf', 'Allega il PDF del report', b ? b.include_pdf : true)}
+          ${check('include_csv', 'Allega il CSV', b ? b.include_csv : true)}
+          ${certs.ca?.present ? check('remove_ca', 'Rimuovi il certificato CA', false) : ''}
+          ${certs.cert?.present || certs.key?.present ? check('remove_client_cert', 'Rimuovi certificato e chiave client', false) : ''}
+        </div>
+        <p class="muted">Client ID e topic di pubblicazione: <strong>${esc(cfg.topic || cfg.client_id || '–')}</strong></p>
+        <div class="mb-status"></div>
+        <div class="settings-actions inline">
+          <button type="submit" class="btn primary">Salva e collega</button>
+          ${b ? '<button type="button" class="btn" data-a="test">Verifica</button>' : ''}
+          ${st?.failed ? `<button type="button" class="btn" data-a="retry">Rinvia falliti (${st.failed})</button>` : ''}
+          ${b ? '<button type="button" class="btn danger" data-a="remove">Scollega</button>' : ''}
+        </div>
+      </form>`;
+    const form = box.querySelector('form');
+    const statusBox = box.querySelector('.mb-status');
+    const drawStatus = s => {
+      if (!b) { statusBox.innerHTML = '<p class="device-status muted">Non configurato.</p>'; return; }
+      if (!s) { statusBox.innerHTML = '<p class="device-status muted">Stato non disponibile.</p>'; return; }
+      statusBox.innerHTML = `
+        <p class="device-status ${s.connected ? 'ok' : 'err'}">${s.connected ? 'Connesso' : 'Non connesso'}
+          · in coda: ${s.pending ?? 0} · falliti: ${s.failed ?? 0}${s.last_sent_at ? ` · ultimo invio: ${esc(fmtDate(s.last_sent_at))}` : ''}</p>
+        ${s.last_error ? `<p class="device-status err">Ultimo errore: ${esc(s.last_error)}</p>` : ''}`;
+    };
+    drawStatus(st);
+
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      if (!form.reportValidity()) return;
+      const fd = new FormData();
+      fd.append('host', form.elements.host.value.trim());
+      fd.append('port', form.elements.port.value);
+      const username = form.elements.username.value.trim();
+      if (username) fd.append('username', username);
+      if (form.elements.password.value) fd.append('password', form.elements.password.value);
+      for (const k of ['include_images', 'include_pdf', 'include_csv', 'remove_ca', 'remove_client_cert']) {
+        if (form.elements[k]) fd.append(k, form.elements[k].checked ? 'true' : 'false');
+      }
+      for (const k of ['ca_file', 'cert_file', 'key_file']) {
+        const f = form.elements[k].files[0];
+        if (f) fd.append(k, f);
+      }
+      const btn = form.querySelector('[type=submit]');
+      btn.disabled = true;
+      try {
+        const res = await api('/api/message-broker', { method: 'POST', body: fd });
+        toast(res.connected ? 'Broker MQTT collegato' : 'Configurazione salvata, ma la connessione al broker non è riuscita', res.connected ? 'ok' : 'warn');
+        load();
+      } catch (err) { toast(err.message, 'err'); }
+      finally { btn.disabled = false; }
+    });
+    form.querySelector('[data-a="test"]')?.addEventListener('click', async () => {
+      statusBox.innerHTML = '<p class="device-status muted">Verifica in corso…</p>';
+      try { drawStatus(await api('/api/message-broker/test')); }
+      catch (err) { statusBox.innerHTML = `<p class="device-status err">${esc(err.message)}</p>`; }
+    });
+    form.querySelector('[data-a="retry"]')?.addEventListener('click', async () => {
+      try {
+        const res = await api('/api/message-broker/retry-failed', { method: 'POST' });
+        toast(`${res.requeued} messaggi rimessi in coda`, 'ok');
+        load();
+      } catch (err) { toast(err.message, 'err'); }
+    });
+    form.querySelector('[data-a="remove"]')?.addEventListener('click', async () => {
+      const ok = await confirmDialog('Scollega broker MQTT', '<p>Smettere di inviare le pesate al broker MQTT? I messaggi in coda restano salvati.</p>',
+        { label: 'Scollega', kind: 'danger', onConfirm: () => api('/api/message-broker', { method: 'DELETE' }) });
+      if (ok) { toast('Broker MQTT scollegato', 'ok'); load(); }
     });
   }
   load();
