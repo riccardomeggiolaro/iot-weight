@@ -40,6 +40,7 @@ export function renderPesa(el) {
   el.innerHTML = `
     <div class="weigher-tabs" role="tablist" aria-label="Pese" ${plant.weighers.length > 1 ? '' : 'hidden'}></div>
     <div class="pesa-grid">
+      <div class="area-right">
       <section class="card area-vehicle" aria-labelledby="h-vehicle">
         <div class="card-h"><h2 id="h-vehicle">Mezzo sulla pesa</h2><button class="btn" data-act="clear" title="Togli il mezzo selezionato" style="padding:4px 10px;font-size:13px">Svuota</button></div>
         <div class="card-b">
@@ -51,6 +52,11 @@ export function renderPesa(el) {
           <ul class="access-list" data-slot="accesses" aria-label="Mezzi in impianto"></ul>
         </div>
       </section>
+      <section class="card photo-card" data-card="photo" aria-labelledby="h-photo">
+        <div class="card-h"><h2 id="h-photo">Ultima foto</h2><span class="muted" data-slot="photo-time" style="font-size:12px"></span></div>
+        <div class="card-b" data-slot="photo"></div>
+      </section>
+      </div>
 
       <div class="area-data">
         <section class="card data-card" aria-labelledby="h-data">
@@ -72,10 +78,6 @@ export function renderPesa(el) {
           </div>
         </section>
         <div class="area-side">
-          <section class="card" data-card="photo" aria-labelledby="h-photo">
-            <div class="card-h"><h2 id="h-photo">Ultima foto</h2><span class="muted" data-slot="photo-time" style="font-size:12px"></span></div>
-            <div class="card-b" data-slot="photo"></div>
-          </section>
           <section class="card" data-card="relays" aria-labelledby="h-relays">
             <div class="card-h"><h2 id="h-relays">Sbarre</h2></div>
             <div class="card-b" data-slot="relays"></div>
@@ -193,7 +195,7 @@ export function renderPesa(el) {
     const hasRelays = Object.keys(current.relays).length > 0;
     el.querySelector('[data-card="photo"]').hidden = !hasCams;
     el.querySelector('[data-card="relays"]').hidden = !hasRelays;
-    $('.area-side').hidden = !hasCams && !hasRelays;
+    $('.area-side').hidden = !hasRelays;
   }
 
   function renderPhoto(flash = false) {
