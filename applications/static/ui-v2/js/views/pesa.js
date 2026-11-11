@@ -52,9 +52,15 @@ export function renderPesa(el) {
         </div>
       </section>
 
+      <div class="area-data">
+        <section class="card data-card" aria-labelledby="h-data">
+          <div class="card-h"><h2 id="h-data">Dati pesata</h2><span class="muted data-hint" data-slot="data-hint"></span></div>
+          <div class="card-b"><div class="form-grid data-grid" data-slot="data-form"></div></div>
+        </section>
+      </div>
+
       <div class="area-weight">
         <section class="card weight-card" data-slot="weight" aria-live="polite"></section>
-        <div data-slot="auto"></div>
         <section class="actions" aria-label="Azioni">
           <button class="btn big" data-act="in">Pesata entrata <span class="kbd">F1</span></button>
           <button class="btn big" data-act="out">Pesata uscita <span class="kbd">F2</span></button>
@@ -65,21 +71,16 @@ export function renderPesa(el) {
             <button class="btn" data-act="reprint">Ristampa</button>
           </div>
         </section>
-        <section class="card data-card" aria-labelledby="h-data">
-          <div class="card-h"><h2 id="h-data">Dati pesata</h2><span class="muted data-hint" data-slot="data-hint"></span></div>
-          <div class="card-b"><div class="form-grid data-grid" data-slot="data-form"></div></div>
-        </section>
-      </div>
-
-      <div class="area-side">
-        <section class="card" data-card="photo" aria-labelledby="h-photo">
-          <div class="card-h"><h2 id="h-photo">Ultima foto</h2><span class="muted" data-slot="photo-time" style="font-size:12px"></span></div>
-          <div class="card-b" data-slot="photo"></div>
-        </section>
-        <section class="card" data-card="relays" aria-labelledby="h-relays">
-          <div class="card-h"><h2 id="h-relays">Sbarre</h2></div>
-          <div class="card-b" data-slot="relays"></div>
-        </section>
+        <div class="area-side">
+          <section class="card" data-card="photo" aria-labelledby="h-photo">
+            <div class="card-h"><h2 id="h-photo">Ultima foto</h2><span class="muted" data-slot="photo-time" style="font-size:12px"></span></div>
+            <div class="card-b" data-slot="photo"></div>
+          </section>
+          <section class="card" data-card="relays" aria-labelledby="h-relays">
+            <div class="card-h"><h2 id="h-relays">Sbarre</h2></div>
+            <div class="card-b" data-slot="relays"></div>
+          </section>
+        </div>
       </div>
     </div>
     <div class="activity-drawer">
@@ -193,7 +194,6 @@ export function renderPesa(el) {
     el.querySelector('[data-card="photo"]').hidden = !hasCams;
     el.querySelector('[data-card="relays"]').hidden = !hasRelays;
     $('.area-side').hidden = !hasCams && !hasRelays;
-    $('.pesa-grid').classList.toggle('no-side', !hasCams && !hasRelays);
   }
 
   function renderPhoto(flash = false) {
@@ -341,13 +341,6 @@ export function renderPesa(el) {
     slot('data-hint').textContent = ids.id ? (a?.type === 'RESERVATION' ? 'Prenotazione selezionata' : 'Accesso selezionato') : '';
   }
 
-  function renderAuto() {
-    const box = slot('auto');
-    box.innerHTML = plant.isAutomatic
-      ? `<div class="auto-banner">● Modalità ${plant.mode === 'SEMIAUTOMATIC' ? 'semiautomatica' : 'automatica'}: le pesate partono da sole quando viene letta una targa o un badge. I comandi qui sotto restano disponibili per intervenire.</div>`
-      : '';
-  }
-
   // Registro attività: nascosto in una linguetta in basso a sinistra; mostra quante
   // voci nuove sono arrivate mentre era chiuso.
   let activityOpen = safeGet(ACTIVITY_KEY) === '1';
@@ -373,7 +366,7 @@ export function renderPesa(el) {
 
   function renderAll() {
     renderTabs(); renderWeight(); renderSelected(); renderAccesses();
-    renderPhoto(); renderRelays(); renderAuto(); renderActivity(); syncDataForm();
+    renderPhoto(); renderRelays(); renderActivity(); syncDataForm();
   }
 
   // ── Dati ───────────────────────────────────────────────────
