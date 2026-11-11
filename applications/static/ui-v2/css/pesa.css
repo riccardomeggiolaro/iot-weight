@@ -12,26 +12,21 @@
 .pesa-grid {
   display: grid; gap: 16px;
   grid-template-columns: minmax(260px, 340px) minmax(380px, 1fr) minmax(260px, 340px);
-  grid-template-areas: "side weight vehicle";
+  grid-template-areas: "data weight vehicle";
   align-items: start;
 }
 .area-vehicle { grid-area: vehicle; }
+.area-data { grid-area: data; display: flex; flex-direction: column; gap: 16px; }
 .area-weight { grid-area: weight; display: flex; flex-direction: column; gap: 16px; }
-.area-side { grid-area: side; display: flex; flex-direction: column; gap: 16px; }
-/* senza colonna laterale peso e mezzi mantengono la loro larghezza e si centrano */
-.pesa-grid.no-side {
-  grid-template-columns: minmax(380px, calc(100% - 2 * 340px - 2 * 16px)) minmax(260px, 340px);
-  grid-template-areas: "weight vehicle"; justify-content: center;
-}
+/* foto e sbarre sotto i pulsanti, affiancate */
+.area-side { display: flex; flex-wrap: wrap; gap: 16px; }
+.area-side > .card { flex: 1 1 260px; min-width: 0; }
 .area-side[hidden], .area-side > .card[hidden] { display: none; }
 @media (max-width: 1180px) {
-  .pesa-grid { grid-template-columns: 1fr minmax(260px, 340px); grid-template-areas: "weight vehicle" "side side"; }
-  .area-side { flex-direction: row; flex-wrap: wrap; }
-  .area-side > .card { flex: 1 1 260px; }
-  .pesa-grid.no-side { grid-template-columns: 1fr minmax(260px, 340px); }
+  .pesa-grid { grid-template-columns: minmax(260px, 340px) 1fr; grid-template-areas: "data weight" "vehicle vehicle"; }
 }
 @media (max-width: 820px) {
-  .pesa-grid, .pesa-grid.no-side { grid-template-columns: 1fr; grid-template-areas: "weight" "vehicle" "side"; }
+  .pesa-grid { grid-template-columns: 1fr; grid-template-areas: "weight" "data" "vehicle"; }
 }
 
 /* Peso grande */
@@ -59,11 +54,6 @@
 .actions .big { padding: 18px 14px; font-size: 18px; border-radius: 12px; }
 .actions .small-row { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
 @media (max-width: 520px) { .actions .small-row { grid-template-columns: repeat(2, 1fr); } }
-.auto-banner {
-  display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 12px;
-  background: var(--ok-bg); color: var(--ok); font-weight: 600; font-size: 14px;
-}
-
 /* Mezzo */
 .vehicle-search { display: flex; gap: 8px; }
 .selected-box {
@@ -135,7 +125,7 @@
   .activity-drawer { left: 12px; bottom: 64px; width: calc(100vw - 24px); }
 }
 
-/* Dati pesata (sotto i comandi) */
+/* Dati pesata (colonna a sinistra del peso) */
 .data-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
 .data-hint { font-size: 12px; font-weight: 600; }
 .ai-badge { font-style: normal; font-size: 11px; font-weight: 700; color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); border-radius: 999px; padding: 1px 7px; margin-left: 4px; }
