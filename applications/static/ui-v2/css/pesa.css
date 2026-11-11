@@ -14,16 +14,29 @@
   grid-template-columns: minmax(260px, 340px) minmax(380px, 1fr) minmax(260px, 340px);
   grid-template-areas: "data weight vehicle";
   align-items: start;
+  /* altezza utile: schermo meno barra in alto, margine sopra e spazio della linguetta Attività */
+  --pesa-h: calc(100dvh - var(--topbar-h) - 18px - 52px);
 }
-.area-vehicle { grid-area: vehicle; }
+.weigher-tabs:not([hidden]) + .pesa-grid { --pesa-h: calc(100dvh - var(--topbar-h) - 18px - 52px - 56px); }
 .area-data { grid-area: data; display: flex; flex-direction: column; gap: 16px; }
 .area-weight { grid-area: weight; display: flex; flex-direction: column; gap: 16px; }
-/* foto e sbarre sotto i pulsanti, affiancate */
+/* colonna destra: mezzi in impianto (scorre) e, sotto, l'ultima foto (altezza fissa) */
+.area-right { grid-area: vehicle; display: flex; flex-direction: column; gap: 16px; height: var(--pesa-h); min-height: 560px; }
+.area-right > .area-vehicle { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.area-right > .area-vehicle > .card-b { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.area-right .access-list { flex: 1 1 auto; min-height: 90px; max-height: none; }
+.area-right > .photo-card { flex: 0 0 auto; }
+.area-right > .photo-card[hidden] { display: none; }
+.area-right .photo, .area-right .photo-empty { aspect-ratio: auto; height: clamp(120px, 22dvh, 230px); }
+/* sbarre sotto i pulsanti */
 .area-side { display: flex; flex-wrap: wrap; gap: 16px; }
 .area-side > .card { flex: 1 1 260px; min-width: 0; }
 .area-side[hidden], .area-side > .card[hidden] { display: none; }
 @media (max-width: 1180px) {
   .pesa-grid { grid-template-columns: minmax(260px, 340px) 1fr; grid-template-areas: "data weight" "vehicle vehicle"; }
+  .area-right { height: auto; min-height: 0; flex-direction: row; flex-wrap: wrap; }
+  .area-right > .card { flex: 1 1 300px; }
+  .area-right .access-list { max-height: 46vh; }
 }
 @media (max-width: 820px) {
   .pesa-grid { grid-template-columns: 1fr; grid-template-areas: "weight" "data" "vehicle"; }

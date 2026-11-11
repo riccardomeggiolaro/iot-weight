@@ -19,7 +19,6 @@ const ROUTES = {
   pesate:       { title: 'Pesate',       render: renderPesate },
   anagrafiche:  { title: 'Anagrafiche',  render: renderAnagrafiche },
   impianto:     { title: 'Impianto',     render: renderImpianto },
-  report:       { title: 'Report',       render: el => renderPlaceholder(el, '📊', 'Report', 'Statistiche, esportazioni e modelli di stampa.') },
   impostazioni: { title: 'Impostazioni', render: renderImpostazioni },
   designer:     { title: 'Report designer', render: renderDesigner, nav: 'impostazioni' },
 };
