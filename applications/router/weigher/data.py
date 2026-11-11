@@ -11,7 +11,7 @@ from modules.md_database.functions.get_data_by_attributes import get_data_by_att
 from modules.md_database.functions.update_access import update_access
 from modules.md_database.functions.update_data import update_data
 from modules.md_database.interfaces.access import SetAccessDTO
-from modules.md_database.md_database import AccessStatus, TypeAccess
+from modules.md_database.md_database import AccessStatus, TypeAccess, AccessMode
 import libs.lb_config as lb_config
 import json
 import modules.md_weigher.md_weigher as md_weigher
@@ -96,7 +96,8 @@ class DataRouter(CallbackWeigher):
 			if access.status == AccessStatus.CLOSED:
 				raise HTTPException(status_code=400, detail=f"Non puoi selezionare l'accesso con id '{data_dto.id_selected.id}' perchè è già chiuso")
 			last_in_out_open = False
-			if len(access.in_out) > 0:
+			# Prenotazione generica: ogni pesata è a sé, non c'è un'entrata da completare
+			if len(access.in_out) > 0 and access.mode != AccessMode.GENERIC:
 				if access.in_out[-1].idWeight1 is not None and access.in_out[-1].idWeight2 is None:
 					weight1 = access.in_out[-1].weight1.weight
 				elif access.in_out[-1].idWeight1 is not None and access.in_out[-1].idWeight2 is not None and access.number_in_out is not None:
@@ -177,7 +178,7 @@ class DataRouter(CallbackWeigher):
 		# Recalculate weight1 and io_data if an access was selected after the initial check
 		if data_dto.id_selected.id not in [-1, None] and weight1 is None:
 			access_for_weight = get_access_by_id(data_dto.id_selected.id)
-			if access_for_weight and len(access_for_weight.in_out) > 0:
+			if access_for_weight and len(access_for_weight.in_out) > 0 and access_for_weight.mode != AccessMode.GENERIC:
 				if access_for_weight.in_out[-1].idWeight1 is not None and access_for_weight.in_out[-1].idWeight2 is None:
 					weight1 = access_for_weight.in_out[-1].weight1.weight
 				elif access_for_weight.in_out[-1].idWeight1 is not None and access_for_weight.in_out[-1].idWeight2 is not None and access_for_weight.number_in_out is not None:
@@ -336,6 +337,12 @@ class DataRouter(CallbackWeigher):
 				weighers_data[instance.instance_name][instance.weigher_name]["data"]["reservation_has_driver"] = data_in_execution.driver.id is not None
 				weighers_data[instance.instance_name][instance.weigher_name]["data"]["reservation_has_note"] = data_in_execution.note is not None and data_in_execution.note != ""
 				weighers_data[instance.instance_name][instance.weigher_name]["data"]["reservation_has_document_reference"] = data_in_execution.document_reference is not None and data_in_execution.document_reference != ""
+				card_registry = access.card_registry
+				weighers_data[instance.instance_name][instance.weigher_name]["data"]["card"] = {
+					"id": card_registry.id if card_registry else None,
+					"number": card_registry.number if card_registry else None,
+					"code": card_registry.code if card_registry else None
+				}
 				self.setIdSelected(instance_name=instance.instance_name, weigher_name=instance.weigher_name, new_id=data_dto.id_selected.id, weight1=weight1, need_to_confirm=need_to_confirm)
 				self.setDataInExecution(instance_name=instance.instance_name, weigher_name=instance.weigher_name, source=data_in_execution, idAccess=data_dto.id_selected.id)
 		else:

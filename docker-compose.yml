@@ -1,0 +1,32 @@
+# IoT-Weight - avvio con:  docker compose pull && docker compose up -d
+#
+# network_mode host  -> porta web (80), CUPS (631) e dispositivi TCP (bilance,
+#                       RFID, Moxa) raggiungibili come in un'installazione nativa
+# privileged         -> accesso alle porte seriali (/dev/ttyS*, /dev/ttyUSB*)
+#                       e mount CIFS della sync-folder
+services:
+  iot-weight:
+    build:
+      context: .
+    # Immagine pubblicata dalla GitHub Action (registry privato: serve "docker login ghcr.io").
+    # Con il codice sorgente si puo' anche costruire in locale: docker compose up -d --build
+    image: ${IOT_WEIGHT_IMAGE:-ghcr.io/riccardomeggiolaro/iot-weight}:${IOT_WEIGHT_TAG:-latest}
+    container_name: iot-weight
+    restart: unless-stopped
+    network_mode: host
+    privileged: true
+    environment:
+      TZ: ${TZ:-Europe/Rome}
+      CUPS_ENABLED: ${CUPS_ENABLED:-1}
+      CUPS_ADMIN_USER: ${CUPS_ADMIN_USER:-admin}
+      CUPS_ADMIN_PASSWORD: ${CUPS_ADMIN_PASSWORD:-}
+    volumes:
+      - ${IOT_WEIGHT_CONFIG_DIR:-./docker-data/config}:/etc/iot-weight
+      - ${IOT_WEIGHT_DATA_DIR:-./docker-data/data}:/var/opt/in-out
+      - ${IOT_WEIGHT_CUPS_DIR:-./docker-data/cups}:/etc/cups
+      - /dev:/dev
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"

@@ -31,6 +31,7 @@ from applications.router.anagrafic.panel_siren.adapters import AdapterFactory
 from applications.router.weigher.manager_weighers_data import weighers_data
 from applications.utils.utils_report import get_data_variables, generate_html_report, generate_csv_report, save_file_dir
 from libs.lb_printer import printer
+import modules.md_message_broker.md_message_broker as md_message_broker
 import applications.utils.utils as utils
 import threading
 import time
@@ -189,6 +190,11 @@ class CallbackWeigher(Functions, WebSocket):
 			############################
 			# ASSOCIAZIONE DELLA PESATA SALVATA ALLA COMBINAZIONE IN-OUT CORRETTA DELL'ACCESSO
 			last_in_out = access.in_out[-1] if len(access.in_out) > 0 else None
+			# PRENOTAZIONE GENERICA: ogni pesata crea il proprio in-out (come la pesata generica),
+			# senza completare l'in-out precedente
+			is_generic_access = access.mode == AccessMode.GENERIC
+			if is_generic_access:
+				last_in_out = None
 			if last_in_out and not last_in_out.idWeight2:
 				weight1 = last_in_out.weight1.weight
 				net_weight = weight1 - gross_weight if weight1 > gross_weight else gross_weight - weight1
@@ -242,8 +248,15 @@ class CallbackWeigher(Functions, WebSocket):
 			access = get_access_by_id(last_pesata.data_assigned.accessId)
 			last_in_out = access.in_out[-1]
 			len_in_out = len(access.in_out)
-			is_test = access.type == TypeAccess.TEST
-			is_to_close = len_in_out == access.number_in_out and last_in_out.idWeight2 or is_test
+			is_generic_access = access.mode == AccessMode.GENERIC
+			# La pesata di una prenotazione generica viene trattata come una generica
+			# (report, stampante, copie, CSV e relè della configurazione "generic")
+			is_test = access.type == TypeAccess.TEST or is_generic_access
+			if is_generic_access:
+				# Si chiude quando ha effettuato il numero di operazioni previsto
+				is_to_close = access.number_in_out is not None and len_in_out >= access.number_in_out
+			else:
+				is_to_close = len_in_out == access.number_in_out and last_in_out.idWeight2 or is_test
 			last_in_out.access = access
    			############################
 			# CREO L'IN-OUT SUCCESSIVO PER L'ASSEGNAZIONE DEL MATERIALE SE L'ACCESSO NON E' STATO CHIUSO E HA PIU' DI UNA OPERAZIONE
@@ -317,6 +330,8 @@ class CallbackWeigher(Functions, WebSocket):
 			############################
 			# SCATTA LE FOTO PRIMA DI GENERARE IL REPORT
 			try:
+				# FOTO SCATTATE DA ALLEGARE AL MESSAGGIO PER IL BROKER
+				broker_images = []
 				if weighing_stored_db:
 					i = 1
 					sub_folder_path = structure_folder_rule()
@@ -334,6 +349,7 @@ class CallbackWeigher(Functions, WebSocket):
 							if image_captured_details["image"]:
 								file_name = f"{i}_{last_pesata.weight_executed.pid}.png"
 								save_bytes_to_file(image_captured_details["image"], file_name, path_img)
+								broker_images.append((file_name, image_captured_details["image"]))
 								path_name = f"{sub_folder_path}/{file_name}"
 								add_data("weighing_picture", {"path_name": path_name, "idWeighing": weighing_stored_db["id"]})
 								i = i + 1
@@ -351,6 +367,8 @@ class CallbackWeigher(Functions, WebSocket):
 				############################
 				name_file, variables, report = get_data_variables(last_in_out, is_generic=is_test)
 				remote_folder = lb_config.g_config["app_api"]["sync_folder"]["remote_folder"]
+				pdf = None
+				csv = None
 				# MANDA IN STAMPA I DATI RELATIVI ALLA PESATA
 				if generate_report and report:
 					html = generate_html_report(reports_dir, report, v=variables.dict())
@@ -390,6 +408,23 @@ class CallbackWeigher(Functions, WebSocket):
 					csv = generate_csv_report(variables)
 					if csv:
 						save_file_dir(path_csv, name_file.replace(".pdf", ".csv"), csv)
+				# ACCODA LA PESATA (DATI + FOTO + REPORT) PER L'INVIO AL MESSAGE BROKER
+				if weighing_stored_db:
+					self.enqueueWeighingToBroker(
+						instance_name=instance_name,
+						weigher_name=weigher_name,
+						event_type=event_type,
+						last_in_out=last_in_out,
+						weighing_id=weighing_stored_db["id"],
+						access_id=access.id,
+						reports_dir=reports_dir,
+						name_file=name_file,
+						variables=variables,
+						report=report,
+						images=broker_images,
+						pdf=pdf,
+						csv=csv,
+					)
 				# APRE E CHIUDE I RELE'
 				if weighing_stored_db:
 					time_between_actions = lb_config.g_config["app_api"]["weighers"][instance_name]["time_between_actions"]
@@ -421,6 +456,36 @@ class CallbackWeigher(Functions, WebSocket):
 			for weigher in weighers_data[instance]:
 				weight = {"access": {}}
 				asyncio.run(weighers_data[instance][weigher]["sockets"].manager_realtime.broadcast(weight))
+
+	def enqueueWeighingToBroker(self, instance_name, weigher_name, event_type, last_in_out, weighing_id, access_id, reports_dir, name_file, variables, report, images, pdf, csv):
+		# Accoda la pesata per il message broker senza interrompere il flusso della pesata in caso di errore
+		try:
+			broker = md_message_broker.module_message_broker
+			if broker is None or broker.config is None:
+				return
+			# Se il report/CSV non sono stati generati per la stampa li genera comunque per il broker
+			if broker.config.include_pdf and not pdf and report:
+				html = generate_html_report(reports_dir, report, v=variables.dict())
+				pdf = printer.generate_pdf_from_html(html_content=html)
+			if broker.config.include_csv and not csv:
+				csv = generate_csv_report(variables)
+			name_file = name_file or f"weighing_{weighing_id}.pdf"
+			md_message_broker.enqueue_weighing(
+				instance_name=instance_name,
+				weigher_name=weigher_name,
+				event_type=event_type,
+				weighing=variables.model_dump(mode="json"),
+				images=images,
+				pdf=(name_file, pdf) if pdf else None,
+				csv=(name_file.replace(".pdf", ".csv"), csv) if csv else None,
+				ids={
+					"weighing_id": weighing_id,
+					"in_out_id": last_in_out.id,
+					"access_id": access_id,
+				},
+			)
+		except Exception as e:
+			lb_log.weighing_error(f"Errore accodamento pesata al message broker: {e}")
 
 	def broadcastRealtimeSafe(self, instance_name: str, weigher_name: str, message: dict):
 		# Invia un messaggio sul websocket realtime senza interrompere il flusso della pesata in caso di errore
@@ -546,17 +611,27 @@ class CallbackWeigher(Functions, WebSocket):
 					error_message = f"Il peso deve essere maggiore di {min_weight} kg"
 				elif access:
 					current_weigher_data = self.getData(instance_name=instance.instance_name, weigher_name=instance.weigher_name)
-					set_preset_tare_if_exists = None
+					# Il tipo di gestione (transito o pesata) dipende SOLO dalla modalità dell'accesso,
+					# anche se l'accesso è già selezionato (es. nuovo tentativo dopo una pesata automatica fallita).
+					# Prima veniva calcolato solo alla prima selezione: al nuovo tentativo restava None e una
+					# pesata con tara preimpostata veniva gestita come transito, aprendo i relè dell'entrata.
+					is_transit = access.get("mode") == AccessMode.TRANSIT
+					set_preset_tare_if_exists = not is_transit
 					if current_weigher_data["id_selected"]["id"] != access["id"]:
 						await self.DeleteData(instance=instance)
 						try:
-							is_transit = access.get("mode") == AccessMode.TRANSIT
 							data_dto = DataDTO(**{"id_selected": {"id": access["id"]}})
-							set_preset_tare_if_exists = not is_transit
 							need_to_confirm = True if mode == "SEMIAUTOMATIC" and set_preset_tare_if_exists else False
 							await self.SetData(request=None, data_dto=data_dto, instance=instance, need_to_confirm=need_to_confirm, set_preset_tare_if_exists=set_preset_tare_if_exists)
 						except Exception as e:
-							error_message = e.detail
+							error_message = getattr(e, "detail", str(e))
+					elif set_preset_tare_if_exists:
+						# Accesso già selezionato: reinvia la tara preimpostata del mezzo (come farebbe SetData),
+						# perché dopo una pesata fallita l'indicatore potrebbe non averla più
+						selected_data = self.getData(instance_name=instance.instance_name, weigher_name=instance.weigher_name)
+						vehicle_tare = selected_data["data_in_execution"]["vehicle"]["tare"]
+						if selected_data["id_selected"]["weight1"] is None and vehicle_tare is not None:
+							md_weigher.module_weigher.setModope(instance_name=instance.instance_name, weigher_name=instance.weigher_name, modope="PRESETTARE", presettare=vehicle_tare)
 					if not error_message:
 						self.automatic_weighing_process.append(proc)
 						if not set_preset_tare_if_exists:

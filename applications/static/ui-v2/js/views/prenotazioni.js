@@ -448,7 +448,7 @@ function renderSection(el, conf, tab) {
   function inOutDetail(io) {
     const a = io.access || {};
     const info = [
-      ['Accesso', a.type ? `${a.type}${a.mode === 'Transito' ? ' (transito)' : ''} · ${(STATUS[a.status] || { label: a.status }).label}` : null],
+      ['Accesso', a.type ? `${a.type}${a.mode === 'Transito' ? ' (transito)' : a.mode === 'Generica' ? ' (generica)' : ''} · ${(STATUS[a.status] || { label: a.status }).label}` : null],
       ['Tessera', io.card_number ?? a.card_registry?.number],
       ['Operatore', io.weight1?.operator?.description || io.weight2?.operator?.description],
       ['Riferimento documento', io.document_reference],
